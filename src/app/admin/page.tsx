@@ -2,14 +2,14 @@
 'use client';
 
 import React from 'react';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,12 +19,21 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
 
-  const appsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'global_applications'), orderBy('submissionDate', 'desc'));
-  }, [firestore]);
+  // Check if the current user is an admin
+  const adminDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'admins', user.uid);
+  }, [firestore, user]);
 
-  const { data: applications, isLoading } = useCollection(appsQuery);
+  const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
+
+  // Only query global applications if the user is confirmed as an admin
+  const appsQuery = useMemoFirebase(() => {
+    if (!firestore || !adminData) return null;
+    return query(collection(firestore, 'global_applications'), orderBy('submissionDate', 'desc'));
+  }, [firestore, adminData]);
+
+  const { data: applications, isLoading: isAppsLoading } = useCollection(appsQuery);
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
     if (!firestore || !app?.id || !app?.applicantId) {
@@ -54,7 +63,7 @@ export default function AdminDashboard() {
     setIsBootstrapping(true);
     try {
       await setDoc(doc(firestore, 'admins', user.uid), {
-        email: user.email,
+        email: user.email || 'anonymous',
         role: 'super_admin',
         grantedAt: new Date().toISOString()
       });
@@ -72,7 +81,31 @@ export default function AdminDashboard() {
     app.jobPostingId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isUserLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto" /></div>;
+  if (isUserLoading || isAdminLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>;
+
+  if (!adminData) {
+    return (
+      <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none">
+          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+            <Lock className="h-8 w-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-accent uppercase italic">Access Restricted</h2>
+            <p className="text-muted-foreground text-sm">You do not have administrative privileges to view this command center.</p>
+          </div>
+          <Button 
+            onClick={handleBootstrapAdmin} 
+            disabled={isBootstrapping}
+            className="w-full bg-primary hover:bg-primary/90 h-14 font-bold uppercase italic"
+          >
+            {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
+            Request Admin Access
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#EFF1F7] min-h-screen py-8">
@@ -83,15 +116,6 @@ export default function AdminDashboard() {
             <p className="text-muted-foreground text-sm">Verify M-Pesa payments and approve final candidate documentation.</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={handleBootstrapAdmin} 
-              disabled={isBootstrapping}
-              className="border-primary text-primary hover:bg-primary hover:text-white"
-            >
-              {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-4 w-4" />}
-              Setup Admin Permissions
-            </Button>
             <div className="relative flex-1 md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -104,7 +128,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isAppsLoading ? (
           <div className="flex justify-center p-12">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>

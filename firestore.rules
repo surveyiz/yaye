@@ -24,6 +24,8 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow get: if isSignedIn();
+      // Allow users to create their own admin record for bootstrapping purposes
+      allow create: if isOwner(adminId);
     }
   }
 }
