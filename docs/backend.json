@@ -30,11 +30,19 @@
         "status": { 
           "type": "string", 
           "enum": ["payment_pending", "payment_approved", "docs_pending", "docs_uploaded", "ecitizen_paid", "docs_approved"],
-          "description": "payment_pending: User submitted Ksh 950. payment_approved: Admin verified payment. docs_uploaded: User uploaded CV/Certs. ecitizen_paid: User paid Ksh 1027. docs_approved: Admin final approval."
+          "description": "payment_pending: User submitted Ksh 950. payment_approved: Admin verified payment. docs_uploaded: User provided cert numbers. ecitizen_paid: User paid Ksh 1027. docs_approved: Admin final approval."
         },
         "mpesaCode950": { "type": "string" },
         "mpesaCode1027": { "type": "string" },
-        "educationDetails": { "type": "string" },
+        "educationLevel": { "type": "string" },
+        "certificateNumbers": {
+          "type": "object",
+          "properties": {
+            "kcpe": { "type": "string" },
+            "kcse": { "type": "string" },
+            "tertiary": { "type": "string" }
+          }
+        },
         "documentsUploadedAt": { "type": "string", "format": "date-time" },
         "finalApprovalDate": { "type": "string", "format": "date-time" }
       },

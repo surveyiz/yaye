@@ -11,11 +11,18 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle, AlertCircle, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function AdminDashboard() {
   const { auth, firestore, user, isUserLoading } = useFirebase();
@@ -24,11 +31,10 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
   const [email, setEmail] = React.useState('aicystevens0@gmail.com');
-  const [password, setPassword] = React.useState('');
+  const [password, setPassword] = React.useState('Kipngetich.91!@');
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [isRegistering, setIsRegistering] = React.useState(false);
 
-  // Check if the current user is an admin
   const adminDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'admins', user.uid);
@@ -36,10 +42,8 @@ export default function AdminDashboard() {
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
 
-  // Only query global applications if we have a user
   const appsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // We attempt the query, but handle permission errors in useCollection return
     return query(collection(firestore, 'global_applications'), orderBy('submissionDate', 'desc'));
   }, [firestore, user]);
 
@@ -122,7 +126,6 @@ export default function AdminDashboard() {
 
   if (isUserLoading || isAdminLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>;
 
-  // If user is not logged in OR if the query returned a permission error (meaning they aren't authorized yet)
   if (!user || (!adminData && user.email !== 'aicystevens0@gmail.com') || (appsError && appsError.name === 'FirebaseError')) {
     return (
       <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
@@ -152,7 +155,6 @@ export default function AdminDashboard() {
                 <Input 
                   id="password" 
                   type="password" 
-                  placeholder="••••••••" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -295,6 +297,34 @@ export default function AdminDashboard() {
                             Approve 950
                           </Button>
                         )}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8">
+                              <GraduationCap className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle className="uppercase italic font-headline text-accent">Academic Credentials</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="bg-muted/50 p-4 rounded-xl border space-y-3">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-500">KCPE Certificate</span>
+                                  <span className="font-bold text-accent">{app.certificateNumbers?.kcpe || 'Not Provided'}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b pb-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-500">KCSE Certificate</span>
+                                  <span className="font-bold text-accent">{app.certificateNumbers?.kcse || 'Not Provided'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-black uppercase text-slate-500">Tertiary Certificate</span>
+                                  <span className="font-bold text-accent">{app.certificateNumbers?.tertiary || 'Not Provided'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                         {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && (
                           <Button 
                             size="sm" 
@@ -304,9 +334,6 @@ export default function AdminDashboard() {
                             Final Approve
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" className="h-8">
-                          <FileText className="h-4 w-4" />
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
