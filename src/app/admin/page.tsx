@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -10,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function AdminDashboard() {
   const { auth, firestore, user, isUserLoading } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -52,6 +54,12 @@ export default function AdminDashboard() {
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    if (!auth) return;
+    await auth.signOut();
+    toast({ title: "Signed Out", description: "Admin session ended." });
   };
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
@@ -105,7 +113,7 @@ export default function AdminDashboard() {
   if (!adminData) {
     return (
       <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none">
+        <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none rounded-3xl">
           <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
             <Lock className="h-8 w-8 text-primary" />
           </div>
@@ -114,43 +122,45 @@ export default function AdminDashboard() {
             <p className="text-muted-foreground text-sm">Please sign in with administrative credentials to access the Recruitment Command Center.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-left">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="admin@example.com" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-accent hover:bg-accent/90 h-12 font-bold uppercase italic"
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : <LogIn className="mr-2 h-5 w-5" />}
-              Sign In
-            </Button>
-          </form>
-
-          {user && !adminData && (
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground mb-4 italic">Signed in as {user.email}. Not an admin yet?</p>
+          {!user ? (
+            <form onSubmit={handleLogin} className="space-y-4 text-left">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="admin@example.com" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
               <Button 
+                type="submit" 
+                className="w-full bg-accent hover:bg-accent/90 h-12 font-bold uppercase italic shadow-lg"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : <LogIn className="mr-2 h-5 w-5" />}
+                Sign In
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+               <div className="bg-muted p-4 rounded-xl text-xs font-bold text-accent uppercase italic">
+                Signed in as {user.email}
+               </div>
+               <Button 
                 onClick={handleBootstrapAdmin} 
                 disabled={isBootstrapping}
                 variant="outline"
@@ -158,6 +168,9 @@ export default function AdminDashboard() {
               >
                 {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
                 Request Admin Access
+              </Button>
+              <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground">
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>
             </div>
           )}
@@ -171,8 +184,13 @@ export default function AdminDashboard() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
           <div>
-            <h1 className="font-headline text-3xl font-bold text-accent uppercase italic">Recruitment Command Center</h1>
-            <p className="text-muted-foreground text-sm">Verify M-Pesa payments and approve final candidate documentation.</p>
+            <div className="flex items-center gap-4">
+              <h1 className="font-headline text-3xl font-bold text-accent uppercase italic">Recruitment Command Center</h1>
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="border-accent text-accent hover:bg-accent hover:text-white font-bold uppercase text-[10px]">
+                <LogOut className="mr-2 h-3 w-3" /> Sign Out
+              </Button>
+            </div>
+            <p className="text-muted-foreground text-sm font-bold uppercase italic text-primary">Logged in: {user?.email}</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <div className="relative flex-1 md:w-80">
