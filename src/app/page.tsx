@@ -53,13 +53,15 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-              <Image 
-                src={heroImage?.imageUrl || ''} 
-                alt={heroImage?.description || ''}
-                fill
-                className="object-cover"
-                data-ai-hint="canada landscape"
-              />
+              {heroImage?.imageUrl && (
+                <Image 
+                  src={heroImage.imageUrl} 
+                  alt={heroImage.description || 'Canada Landscape'}
+                  fill
+                  className="object-cover"
+                  data-ai-hint="canada landscape"
+                />
+              )}
             </div>
           </div>
         </div>

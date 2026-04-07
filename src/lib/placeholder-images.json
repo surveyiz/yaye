@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-canada",
+      "description": "Canada Landscape",
+      "imageUrl": "https://picsum.photos/seed/canada1/1200/600",
+      "imageHint": "Canada landscape"
+    },
+    {
+      "id": "construction-worker",
+      "description": "Construction Worker in Canada",
+      "imageUrl": "https://picsum.photos/seed/job1/600/400",
+      "imageHint": "construction worker"
+    },
+    {
+      "id": "hospitality-job",
+      "description": "Hospitality Professional",
+      "imageUrl": "https://picsum.photos/seed/job2/600/400",
+      "imageHint": "hotel receptionist"
+    },
+    {
+      "id": "medical-nurse",
+      "description": "Registered Nurse",
+      "imageUrl": "https://picsum.photos/seed/job3/600/400",
+      "imageHint": "registered nurse"
+    }
+  ]
 }
