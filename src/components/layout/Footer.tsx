@@ -1,4 +1,5 @@
-import { Mail, Phone, MapPin, Globe } from 'lucide-react';
+
+import { Mail, Phone, MapPin, Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export function Footer() {
@@ -24,7 +25,7 @@ export function Footer() {
               <li><Link href="/" className="hover:text-primary">Home</Link></li>
               <li><Link href="/jobs" className="hover:text-primary">Job Listings</Link></li>
               <li><Link href="/procedure" className="hover:text-primary">Process Steps</Link></li>
-              <li><Link href="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
+              <li><Link href="/admin" className="hover:text-primary flex items-center gap-1"><Lock className="h-3 w-3" /> Admin Dashboard</Link></li>
             </ul>
           </div>
           <div>

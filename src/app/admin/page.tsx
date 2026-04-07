@@ -3,18 +3,21 @@
 
 import React from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
-  const { firestore, user } = useFirebase();
+  const { firestore, user, isUserLoading } = useFirebase();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [isBootstrapping, setIsBootstrapping] = React.useState(false);
 
   const appsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -24,7 +27,10 @@ export default function AdminDashboard() {
   const { data: applications, isLoading } = useCollection(appsQuery);
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
-    if (!firestore || !app?.id || !app?.applicantId) return;
+    if (!firestore || !app?.id || !app?.applicantId) {
+      toast({ variant: "destructive", title: "Error", description: "Invalid application data." });
+      return;
+    }
     
     const globalRef = doc(firestore, 'global_applications', app.id);
     const userRef = doc(firestore, 'users', app.applicantId, 'applications', app.id);
@@ -36,6 +42,28 @@ export default function AdminDashboard() {
 
     updateDocumentNonBlocking(globalRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
+
+    toast({
+      title: "Status Updated",
+      description: `Application moved to ${newStatus.replace('_', ' ')}.`,
+    });
+  };
+
+  const handleBootstrapAdmin = async () => {
+    if (!firestore || !user) return;
+    setIsBootstrapping(true);
+    try {
+      await setDoc(doc(firestore, 'admins', user.uid), {
+        email: user.email,
+        role: 'super_admin',
+        grantedAt: new Date().toISOString()
+      });
+      toast({ title: "Admin Access Granted", description: "You now have permission to manage applications." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Setup Failed", description: err.message });
+    } finally {
+      setIsBootstrapping(false);
+    }
   };
 
   const filteredApps = applications?.filter(app => 
@@ -43,6 +71,8 @@ export default function AdminDashboard() {
     app.mpesaCode1027?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.jobPostingId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isUserLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto" /></div>;
 
   return (
     <div className="bg-[#EFF1F7] min-h-screen py-8">
@@ -52,14 +82,25 @@ export default function AdminDashboard() {
             <h1 className="font-headline text-3xl font-bold text-accent uppercase italic">Recruitment Command Center</h1>
             <p className="text-muted-foreground text-sm">Verify M-Pesa payments and approve final candidate documentation.</p>
           </div>
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search Transaction Code..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-12 border-2"
-            />
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={handleBootstrapAdmin} 
+              disabled={isBootstrapping}
+              className="border-primary text-primary hover:bg-primary hover:text-white"
+            >
+              {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              Setup Admin Permissions
+            </Button>
+            <div className="relative flex-1 md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search Transaction Code..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 border-2"
+              />
+            </div>
           </div>
         </div>
 
@@ -117,7 +158,7 @@ export default function AdminDashboard() {
                           Approve 950
                         </Button>
                       )}
-                      {app.status === 'ecitizen_paid' && (
+                      {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && (
                         <Button 
                           size="sm" 
                           onClick={() => handleUpdateStatus(app, 'docs_approved')} 
