@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Briefcase, Search, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Briefcase, Search, CheckCircle, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -47,95 +47,133 @@ export default function JobsPage() {
   const filteredJobs = jobs.filter(j => j.toLowerCase().includes(searchTerm.toLowerCase()));
 
   if (isUserLoading) {
-    return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#EFF1F7]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-        <div className="space-y-2">
-          <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Available Opportunities</h1>
-          <p className="text-muted-foreground">Explore over 80+ job categories currently recruiting Kenyans.</p>
+    <div className="bg-[#EFF1F7] min-h-screen py-12">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div className="space-y-2">
+            <h1 className="font-headline text-3xl md:text-4xl font-bold text-accent uppercase italic">Global Vacancies</h1>
+            <p className="text-muted-foreground font-medium">Explore over 80+ job categories currently recruiting Kenyans for the 2025 intake.</p>
+          </div>
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search job roles..." 
+              className="pl-10 h-12 border-2 rounded-xl focus:border-primary" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search job roles..." 
-            className="pl-10" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
 
-      {activeApp && (
-        <div className="mb-12 bg-amber-50 border-2 border-amber-200 p-6 rounded-2xl flex flex-col md:flex-row items-center gap-4 justify-between">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-6 w-6 text-amber-600" />
-            <div>
-              <p className="font-bold text-amber-900 uppercase italic">Application Pending</p>
-              <p className="text-xs text-amber-800">You have an active application for <b>{activeApp.jobPostingId}</b>. Complete it to apply for new roles.</p>
+        {activeApp && (
+          <div className="mb-12 bg-white border-2 border-primary/20 p-6 rounded-3xl shadow-lg flex flex-col md:flex-row items-center gap-6 justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-black text-accent uppercase italic text-sm">Active Enrolment Detected</p>
+                <p className="text-xs text-muted-foreground font-medium">You are currently being vetted for <b>{activeApp.jobPostingId}</b>. Complete the current process before applying for new roles.</p>
+              </div>
             </div>
-          </div>
-          <Link href="/status">
-            <Button className="bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase italic">Check Status</Button>
-          </Link>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredJobs.map((job) => (
-          <Card key={job} className="hover:shadow-lg transition-shadow border-none shadow-sm overflow-hidden">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Briefcase className="h-5 w-5 text-accent" />
-                <Badge variant="secondary" className="font-normal">Recruiting</Badge>
-              </div>
-              <CardTitle className="font-headline text-xl leading-tight uppercase italic">{job}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Annual Salary: From $69,500 CAD</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Requires proficiency in English and disciplined work ethic. Training provided in Kenya.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Link href={`/apply?job=${encodeURIComponent(job)}`} className="w-full">
-                <Button 
-                  variant={activeApp ? "ghost" : "outline"} 
-                  disabled={!!activeApp}
-                  className={`w-full font-bold uppercase italic h-12 transition-all ${activeApp ? 'opacity-30' : 'hover:bg-primary hover:text-white'}`}
-                >
-                  {activeApp ? 'Restricted' : 'Apply for this Role'}
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mt-16 bg-accent rounded-2xl p-8 text-white border-b-8 border-primary shadow-2xl">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h3 className="font-headline text-2xl font-bold mb-4 uppercase italic">Can't find your specific role?</h3>
-            <p className="text-blue-100 text-sm">
-              Apply as a "General Worker" and our AI-assisted counselor will help match you with the best department based on your skills and qualifications.
-            </p>
-          </div>
-          <div className="flex md:justify-end">
-            <Link href="/apply">
-              <Button 
-                size="lg" 
-                disabled={!!activeApp}
-                className={`bg-primary hover:bg-primary/90 text-white px-10 h-14 font-bold uppercase italic shadow-lg ${activeApp ? 'opacity-50' : ''}`}
-              >
-                Start General Application
+            <Link href="/status">
+              <Button className="bg-accent hover:bg-accent/90 text-white font-bold uppercase italic h-12 px-8 shadow-md">
+                View My Status <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredJobs.map((job) => {
+            const jobApp = apps?.find(a => a.jobPostingId === job);
+            const isCompleted = jobApp?.status === 'docs_approved';
+            const isCurrentActive = jobApp && !isCompleted;
+            const isDisabled = !!activeApp && !isCurrentActive;
+
+            return (
+              <Card key={job} className={`group hover:shadow-2xl transition-all border-none shadow-md overflow-hidden rounded-3xl bg-white ${isCurrentActive ? 'ring-2 ring-primary' : ''}`}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-accent group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Briefcase className="h-5 w-5" />
+                    </div>
+                    {isCurrentActive ? (
+                      <Badge className="bg-primary text-white uppercase text-[8px] font-bold px-2 py-0.5 animate-pulse">In Progress</Badge>
+                    ) : isCompleted ? (
+                      <Badge className="bg-green-600 text-white uppercase text-[8px] font-bold px-2 py-0.5">Approved</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="uppercase text-[8px] font-bold px-2 py-0.5">Open</Badge>
+                    )}
+                  </div>
+                  <CardTitle className="font-headline text-lg leading-tight uppercase italic text-accent line-clamp-2 min-h-[3rem]">{job}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Annual Salary: From $69,500 CAD</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
+                    Fully sponsored pathway including airfare, visa, and accommodation for successful Kenyan applicants.
+                  </p>
+                </CardContent>
+                <CardFooter className="pt-2">
+                  {isCurrentActive ? (
+                    <Link href="/status" className="w-full">
+                      <Button className="w-full h-12 font-black uppercase italic bg-primary text-white shadow-lg">
+                        View Status
+                      </Button>
+                    </Link>
+                  ) : isCompleted ? (
+                    <Button disabled className="w-full h-12 font-black uppercase italic bg-green-50 text-green-600 border-2 border-green-200 opacity-70">
+                      Success Notice
+                    </Button>
+                  ) : (
+                    <Link href={`/apply?job=${encodeURIComponent(job)}`} className="w-full">
+                      <Button 
+                        disabled={isDisabled}
+                        className={`w-full h-12 font-black uppercase italic transition-all ${isDisabled ? 'bg-muted text-muted-foreground' : 'bg-accent hover:bg-primary text-white shadow-md'}`}
+                      >
+                        {isDisabled ? 'Restricted' : 'Apply Now'}
+                      </Button>
+                    </Link>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="mt-20 bg-accent rounded-[2.5rem] p-8 md:p-12 text-white border-b-8 border-primary shadow-2xl relative overflow-hidden">
+          <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge className="bg-primary text-white border-none font-bold italic">NEA ACCREDITED</Badge>
+              <h3 className="font-headline text-3xl md:text-4xl font-black uppercase italic leading-tight">General Support <br/>Enrolment</h3>
+              <p className="text-blue-100 font-medium text-lg leading-relaxed">
+                If your specific profession is not listed, apply as a <b>"General Worker"</b>. Our AI-assisted placement counselor will match your qualifications to the best department in Canada.
+              </p>
+            </div>
+            <div className="flex lg:justify-end">
+              <Link href="/apply?job=General%20Worker" className="w-full sm:w-auto">
+                <Button 
+                  size="lg" 
+                  disabled={!!activeApp}
+                  className={`w-full sm:w-auto bg-primary hover:bg-white hover:text-accent transition-all text-white px-12 h-16 text-xl font-black uppercase italic shadow-2xl ${activeApp ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Start General Application
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl"></div>
         </div>
       </div>
     </div>

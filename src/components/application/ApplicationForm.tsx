@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Smartphone, Info, AlertCircle, ShieldCheck, UserCircle, LogIn } from 'lucide-react';
-import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { CheckCircle2, Loader2, Smartphone, Info, AlertCircle, ShieldCheck, UserCircle, LogIn, Briefcase } from 'lucide-react';
+import { useFirebase, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, setDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -33,6 +33,13 @@ export function ApplicationForm() {
 
   const { data: profileData, isLoading: isProfileLoading } = useDoc(profileRef);
 
+  const appsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'applications'), orderBy('submissionDate', 'desc'));
+  }, [firestore, user]);
+
+  const { data: apps, isLoading: isAppsLoading } = useCollection(appsQuery);
+
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,6 +56,8 @@ export function ApplicationForm() {
     qualifications: '',
     mpesaMessage: '',
   });
+
+  const activeApp = apps?.find(a => a.status !== 'docs_approved');
 
   React.useEffect(() => {
     if (profileData) {
@@ -187,7 +196,28 @@ export function ApplicationForm() {
     );
   }
 
-  if (isProfileLoading) {
+  if (activeApp) {
+    return (
+      <Card className="border-none shadow-xl p-8 md:p-12 text-center space-y-6">
+        <div className="bg-primary/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto text-primary">
+          <Briefcase className="h-10 w-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl md:text-2xl font-black text-accent uppercase italic">Application In Progress</h2>
+          <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            You already have an active application for <b>{activeApp.jobPostingId}</b>. You must complete the current vetting process before applying for another role.
+          </p>
+        </div>
+        <Link href="/status" className="block">
+          <Button className="w-full h-14 bg-accent hover:bg-accent/90 font-bold uppercase italic shadow-lg">
+            Track Active Application
+          </Button>
+        </Link>
+      </Card>
+    );
+  }
+
+  if (isProfileLoading || isAppsLoading) {
     return (
       <Card className="border-none shadow-xl p-12 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
