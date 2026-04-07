@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from 'react';
@@ -8,12 +9,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Sparkles, Smartphone, CreditCard, Info } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Smartphone, Info, AlertCircle } from 'lucide-react';
 import { aiAssistedJobApplication } from '@/ai/flows/ai-assisted-job-application';
+import { useFirebase } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 const STEPS = ['Personal Details', 'Qualifications', 'Payment', 'Review'];
 
+// Regex to match Safaricom M-Pesa confirmation messages and extract the transaction code
+// Example: QXA12BC34 Confirmed. Ksh950.00 paid to RECRUITMENT SERVICES on 8/4/25...
+const MPESA_MESSAGE_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+RECRUITMENT\s+SERVICES/i;
+
 export function ApplicationForm() {
+  const { auth, firestore, user } = useFirebase();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const initialJob = searchParams.get('job') || '';
 
@@ -21,6 +33,7 @@ export function ApplicationForm() {
   const [loading, setLoading] = React.useState(false);
   const [aiLoading, setAiLoading] = React.useState(false);
   const [aiSuggestions, setAiSuggestions] = React.useState<{recommendedJobs: string[], tailoredStatement: string} | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const [formData, setFormData] = React.useState({
     name: '',
@@ -37,10 +50,30 @@ export function ApplicationForm() {
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(null);
   };
 
-  const handleNext = () => setStep(prev => prev + 1);
-  const handleBack = () => setStep(prev => prev - 1);
+  const handleNext = () => {
+    if (step === 2) {
+      // Validate M-Pesa message before proceeding to review
+      const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
+      if (!match) {
+        setError("Invalid M-Pesa message format. Please paste the complete confirmation message exactly as received from Safaricom.");
+        return;
+      }
+      const amount = parseFloat(match[2].replace(/,/g, ''));
+      if (amount < 950) {
+        setError(`The payment amount detected is Ksh ${amount}, but Ksh 950 is required.`);
+        return;
+      }
+    }
+    setStep(prev => prev + 1);
+  };
+
+  const handleBack = () => {
+    setError(null);
+    setStep(prev => prev - 1);
+  };
 
   const getAiHelp = async () => {
     if (!formData.qualifications) return;
@@ -60,12 +93,89 @@ export function ApplicationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth || !firestore) return;
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      // 1. Ensure user is authenticated (using anonymous auth for applicants)
+      let currentUser = user;
+      if (!currentUser) {
+        const authResult = await signInAnonymously(auth);
+        currentUser = authResult.user;
+      }
+
+      if (!currentUser) throw new Error("Authentication failed");
+
+      // 2. Parse M-Pesa Message
+      const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
+      if (!match) {
+        throw new Error("Invalid M-Pesa message. Please ensure you copied the full message from Safaricom.");
+      }
+      const transactionCode = match[1].toUpperCase();
+
+      // 3. Check for uniqueness of transaction code
+      const transactionRef = doc(firestore, 'payment_transactions', transactionCode);
+      const transactionSnap = await getDoc(transactionRef);
+
+      if (transactionSnap.exists()) {
+        throw new Error("This M-Pesa transaction code has already been used for another application.");
+      }
+
+      // 4. Create references
+      const applicantId = currentUser.uid;
+      const applicationId = crypto.randomUUID();
+      const applicantProfileRef = doc(firestore, 'users', applicantId, 'applicant_profile');
+      const applicationRef = doc(firestore, 'users', applicantId, 'applications', applicationId);
+
+      // 5. Submit data (Atomic-ish)
+      // Save Profile
+      await setDoc(applicantProfileRef, {
+        id: applicantId,
+        fullName: formData.name,
+        phoneNumber: formData.phone,
+        email: formData.email,
+        nationalIdNumber: formData.idNumber,
+        county: formData.county,
+        ward: formData.ward,
+        highestEducationQualification: formData.education,
+        registrationDate: new Date().toISOString()
+      });
+
+      // Save Transaction (Ensures uniqueness via doc ID)
+      await setDoc(transactionRef, {
+        id: transactionCode,
+        mpesaTransactionCode: transactionCode,
+        applicantId: applicantId,
+        applicationId: applicationId,
+        amountPaid: 950,
+        currency: 'KSH',
+        paymentDateReported: new Date().toISOString(),
+        verificationStatus: 'Pending'
+      });
+
+      // Save Application
+      await setDoc(applicationRef, {
+        id: applicationId,
+        applicantId: applicantId,
+        jobPostingId: formData.jobRole,
+        submissionDate: new Date().toISOString(),
+        status: 'Pending Payment Verification'
+      });
+
       setStep(STEPS.length); // Success state
-    }, 2000);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An unexpected error occurred. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Submission Error",
+        description: err.message || "Failed to submit application."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (step === STEPS.length) {
@@ -84,7 +194,7 @@ export function ApplicationForm() {
           <div className="bg-muted p-4 rounded-lg text-sm text-left">
             <p className="font-bold mb-2">Next Steps:</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Our agents will verify your M-Pesa message.</li>
+              <li>Our agents will verify your M-Pesa transaction code.</li>
               <li>You will receive a confirmation SMS within 2 hours.</li>
               <li>A scheduled interview call will follow via {formData.phone}.</li>
             </ol>
@@ -109,6 +219,14 @@ export function ApplicationForm() {
           </div>
         ))}
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <Card className="border-none shadow-xl overflow-hidden">
         <form onSubmit={handleSubmit}>
@@ -254,7 +372,7 @@ export function ApplicationForm() {
                         <p className="text-lg font-bold">Ksh 950</p>
                       </div>
                     </div>
-                    <Separator />
+                    <div className="h-px bg-muted w-full my-2" />
                     <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
                       <li>Go to <strong>M-Pesa</strong> &gt; <strong>Lipa na M-PESA</strong></li>
                       <li>Select <strong>Buy Goods and Services</strong></li>
@@ -340,5 +458,3 @@ export function ApplicationForm() {
     </div>
   );
 }
-
-const Separator = () => <div className="h-px bg-muted w-full my-2" />;
