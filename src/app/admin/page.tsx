@@ -11,10 +11,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AdminDashboard() {
   const { auth, firestore, user, isUserLoading } = useFirebase();
@@ -22,7 +23,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
-  const [email, setEmail] = React.useState('');
+  const [email, setEmail] = React.useState('aicystevens0@gmail.com');
   const [password, setPassword] = React.useState('');
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [isRegistering, setIsRegistering] = React.useState(false);
@@ -35,13 +36,14 @@ export default function AdminDashboard() {
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
 
-  // Only query global applications if the user is confirmed as an admin
+  // Only query global applications if we have a user
   const appsQuery = useMemoFirebase(() => {
-    if (!firestore || !adminData) return null;
+    if (!firestore || !user) return null;
+    // We attempt the query, but handle permission errors in useCollection return
     return query(collection(firestore, 'global_applications'), orderBy('submissionDate', 'desc'));
-  }, [firestore, adminData]);
+  }, [firestore, user]);
 
-  const { data: applications, isLoading: isAppsLoading } = useCollection(appsQuery);
+  const { data: applications, isLoading: isAppsLoading, error: appsError } = useCollection(appsQuery);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ export default function AdminDashboard() {
     try {
       if (isRegistering) {
         await createUserWithEmailAndPassword(auth, email, password);
-        toast({ title: "Account Created", description: "Admin account created successfully. Now request access below." });
+        toast({ title: "Account Created", description: "Admin account created successfully." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Login Successful", description: "Welcome back, Admin." });
@@ -59,7 +61,7 @@ export default function AdminDashboard() {
       toast({ 
         variant: "destructive", 
         title: isRegistering ? "Registration Failed" : "Login Failed", 
-        description: err.message || "Please check your credentials or register if you don't have an account." 
+        description: err.message 
       });
     } finally {
       setIsLoggingIn(false);
@@ -120,7 +122,8 @@ export default function AdminDashboard() {
 
   if (isUserLoading || isAdminLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>;
 
-  if (!adminData) {
+  // If user is not logged in OR if the query returned a permission error (meaning they aren't authorized yet)
+  if (!user || (!adminData && user.email !== 'aicystevens0@gmail.com') || (appsError && appsError.name === 'FirebaseError')) {
     return (
       <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none rounded-3xl">
@@ -129,7 +132,7 @@ export default function AdminDashboard() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-accent uppercase italic">Admin Access</h2>
-            <p className="text-muted-foreground text-sm">Please sign in or register with administrative credentials to access the Recruitment Command Center.</p>
+            <p className="text-muted-foreground text-sm">Please sign in with administrative credentials to access the Recruitment Command Center.</p>
           </div>
 
           {!user ? (
@@ -139,7 +142,6 @@ export default function AdminDashboard() {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="admin@example.com" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -162,7 +164,7 @@ export default function AdminDashboard() {
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : (isRegistering ? <UserPlus className="mr-2 h-5 w-5" /> : <LogIn className="mr-2 h-5 w-5" />)}
-                {isRegistering ? "Create Admin Account" : "Sign In"}
+                {isRegistering ? "Register Admin" : "Sign In"}
               </Button>
               <div className="text-center pt-2">
                 <button 
@@ -170,14 +172,22 @@ export default function AdminDashboard() {
                   onClick={() => setIsRegistering(!isRegistering)}
                   className="text-[10px] font-bold uppercase text-primary hover:underline"
                 >
-                  {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Register as Admin"}
+                  {isRegistering ? "Already have account? Sign In" : "Need to register? Sign Up"}
                 </button>
               </div>
             </form>
           ) : (
             <div className="space-y-4">
+               {appsError && (
+                 <Alert variant="destructive" className="text-left">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Access denied. Your account does not have recruitment privileges yet.
+                    </AlertDescription>
+                 </Alert>
+               )}
                <div className="bg-muted p-4 rounded-xl text-xs font-bold text-accent uppercase italic flex items-center justify-center gap-2">
-                <UserCircle className="h-4 w-4" /> Signed in as {user.email}
+                <UserCircle className="h-4 w-4" /> {user.email}
                </div>
                <Button 
                 onClick={handleBootstrapAdmin} 
@@ -185,8 +195,8 @@ export default function AdminDashboard() {
                 variant="outline"
                 className="w-full h-12 font-bold uppercase italic border-primary text-primary hover:bg-primary/10"
               >
-                {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
-                Grant Admin Permissions
+                {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                Grant My Admin Access
               </Button>
               <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground">
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -209,7 +219,7 @@ export default function AdminDashboard() {
                 <LogOut className="mr-2 h-3 w-3" /> Sign Out
               </Button>
             </div>
-            <p className="text-muted-foreground text-sm font-bold uppercase italic text-primary">Logged in: {user?.email}</p>
+            <p className="text-muted-foreground text-sm font-bold uppercase italic text-primary">Admin Active: {user?.email}</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <div className="relative flex-1 md:w-80">
@@ -235,17 +245,17 @@ export default function AdminDashboard() {
                 <TableRow className="hover:bg-accent border-none">
                   <TableHead className="text-white font-bold uppercase text-[10px]">Submission</TableHead>
                   <TableHead className="text-white font-bold uppercase text-[10px]">Position</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">Current Status</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">Registration (950)</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">eCitizen (1027)</TableHead>
-                  <TableHead className="text-right text-white font-bold uppercase text-[10px]">Workflow Action</TableHead>
+                  <TableHead className="text-white font-bold uppercase text-[10px]">Status</TableHead>
+                  <TableHead className="text-white font-bold uppercase text-[10px]">M-Pesa 950</TableHead>
+                  <TableHead className="text-white font-bold uppercase text-[10px]">eCitizen 1027</TableHead>
+                  <TableHead className="text-right text-white font-bold uppercase text-[10px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
                 {filteredApps?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                      No applications found.
+                      No applications pending review.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -272,7 +282,7 @@ export default function AdminDashboard() {
                         {app.mpesaCode1027 ? (
                           <code className="text-[10px] font-bold bg-blue-50 px-2 py-1 rounded text-blue-700">{app.mpesaCode1027}</code>
                         ) : (
-                          <span className="text-muted-foreground italic text-[10px]">Not Paid</span>
+                          <span className="text-muted-foreground italic text-[10px]">Pending</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
@@ -291,7 +301,7 @@ export default function AdminDashboard() {
                             onClick={() => handleUpdateStatus(app, 'docs_approved')} 
                             className="bg-primary hover:bg-primary/90 h-8 font-bold text-[10px] uppercase italic"
                           >
-                            Final Approval
+                            Final Approve
                           </Button>
                         )}
                         <Button variant="ghost" size="sm" className="h-8">
