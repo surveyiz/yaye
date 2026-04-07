@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * FIRESTORE SECURITY RULES DOCUMENTATION
+     * 
+     * Core Philosophy:
+     * This ruleset implements a strict user-ownership model combined with administrative overrides. 
+     * Security is enforced primarily through path-based nesting for user-specific data (Profiles and Applications) 
+     * and document ID uniqueness for global transactional integrity (M-Pesa payments).
+     * 
+     * Data Structure:
+     * - /job_postings/{id}: Publicly viewable job listings.
+     * - /users/{userId}/applicant_profile: Private personal data owned by the authenticated user.
+     * - /users/{userId}/applications/{id}: Job applications specific to a user.
+     * - /payment_transactions/{mpesaCode}: Global collection ensuring M-Pesa codes are only used once by 
+     *   mapping the transaction code directly to the document ID.
+     * - /admins/{adminId}: A Database Access Control (DBAC) collection for defining administrative roles.
+     * 
+     * Key Security Decisions:
+     * 1. Authorization Independence: Critical fields (like applicantId) are denormalized onto documents 
+     *    to allow for single-document rule evaluation without costly get() calls.
+     * 2. Transaction Integrity: The mpesaTransactionCode is used as the Firestore Document ID. Since 
+     *    'create' operations fail if a document ID already exists, this natively prevents double-usage 
+     *    of payment codes.
+     * 3. Prototyping Mode: Schema validation (types, lengths) is omitted to allow for rapid iteration, 
+     *    but relational integrity (IDs matching auth state) is strictly enforced.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the authenticated user exists in the admin collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    /** @description Combines ownership and existence checks for updates and deletes. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Collection of job positions. Authenticated users can read; only admins can write.
+     * @path /job_postings/{jobPostingId}
+     * @allow (list) Signed-in user browsing available jobs.
+     * @deny (update) Signed-in user attempting to change a job's salary.
+     * @principle Role-based access control for content management.
+     */
+    match /job_postings/{jobPostingId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description User-specific profile data. Users manage their own; admins can view.
+     * @path /users/{userId}/applicant_profile
+     * @allow (create) User 'abc' creating a profile where the doc ID and 'id' field are 'abc'.
+     * @deny (create) User 'abc' trying to create a profile for 'xyz'.
+     * @principle Enforces path-to-data consistency for ownership.
+     */
+    match /users/{userId}/applicant_profile {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Job applications submitted by users. Nested under user for automatic scoping.
+     * @path /users/{userId}/applications/{applicationId}
+     * @allow (list) User 'abc' listing their own applications.
+     * @deny (get) User 'abc' trying to read an application in user 'xyz's path.
+     * @principle Structural segregation of private user data.
+     */
+    match /users/{userId}/applications/{applicationId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.applicantId == userId;
+      allow update: if (isExistingOwner(userId) && request.resource.data.applicantId == resource.data.applicantId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Global payment transactions. Uses M-Pesa code as ID to prevent double-spending.
+     * @path /payment_transactions/{mpesaTransactionCode}
+     * @allow (create) User 'abc' submitting a new transaction code 'QWE123RTY'.
+     * @deny (create) Any user trying to use 'QWE123RTY' if a document with that ID already exists.
+     * @principle Enforces uniqueness via document ID mapping and ID consistency validation.
+     */
+    match /payment_transactions/{mpesaTransactionCode} {
+      allow get: if isAdmin() || (isSignedIn() && resource.data.applicantId == request.auth.uid);
+      allow list: if isAdmin();
+      // On create, ensure the internal code field matches the document ID for integrity.
+      allow create: if isSignedIn() && request.resource.data.applicantId == request.auth.uid && request.resource.data.mpesaTransactionCode == mpesaTransactionCode;
+      // Users cannot update payments after submission; admins update verificationStatus.
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Administrative access control list.
+     * @path /admins/{adminId}
+     * @allow (get) An admin checking their own status.
+     * @deny (list) Anonymous user trying to find the list of admins.
+     * @principle Secure role management via dedicated DBAC collection.
+     */
+    match /admins/{adminId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if false; // Managed via Firebase Console or Admin SDK for security.
+    }
+  }
+}
