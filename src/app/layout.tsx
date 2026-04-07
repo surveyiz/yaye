@@ -3,6 +3,7 @@ import './globals.css';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import { WebviewNavigationTrigger } from '@/components/layout/WebviewNavigationTrigger';
 
 export const metadata: Metadata = {
   title: 'Canada Pathway Jobs | Official Recruitment 2025',
@@ -23,7 +24,8 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <FirebaseClientProvider>
-          {/* No Navbar here for Webview implementation */}
+          {/* Triggers webview events on every client-side navigation */}
+          <WebviewNavigationTrigger />
           <main className="flex-grow">
             {children}
           </main>

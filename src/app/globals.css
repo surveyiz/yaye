@@ -34,6 +34,7 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
+    /* Using Navy for border/input */
     --border: 210 100% 10%;
     --input: 210 100% 10%;
     --ring: 0 100% 50%;
