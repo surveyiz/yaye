@@ -23,6 +23,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <FirebaseClientProvider>
+          {/* No Navbar here for Webview implementation */}
           <main className="flex-grow">
             {children}
           </main>

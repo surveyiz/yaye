@@ -1,11 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Background: White */
+    /* Background: White (#FFFFFFFF) */
     --background: 0 0% 100%;
     --foreground: 210 100% 10%;
     
@@ -28,7 +27,7 @@
     --muted: 226 33% 95%;
     --muted-foreground: 210 100% 10%;
     
-    /* Accent: #001A33 (Pitch Dark Blue / Navy) */
+    /* Accent: #001A33 (Pitch Dark Blue / Navy / text_primary) */
     --accent: 210 100% 10%;
     --accent-foreground: 0 0% 100%;
     

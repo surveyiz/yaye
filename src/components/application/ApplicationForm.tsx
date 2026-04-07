@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from 'react';
@@ -9,18 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Sparkles, Smartphone, Info, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Smartphone, Info, AlertCircle, ShieldCheck } from 'lucide-react';
 import { aiAssistedJobApplication } from '@/ai/flows/ai-assisted-job-application';
 import { useFirebase } from '@/firebase';
 import { signInAnonymously } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 const STEPS = ['Personal Details', 'Qualifications', 'Payment', 'Review'];
 
-// Regex to match Safaricom M-Pesa confirmation messages and extract the transaction code
-// Example: QXA12BC34 Confirmed. Ksh950.00 paid to RECRUITMENT SERVICES on 8/4/25...
+// Strict regex for Safaricom M-Pesa messages
+// Expected: QXA12BC34 Confirmed. Ksh950.00 paid to RECRUITMENT SERVICES on 8/4/25 at 10:00 AM...
 const MPESA_MESSAGE_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+RECRUITMENT\s+SERVICES/i;
 
 export function ApplicationForm() {
@@ -53,21 +52,37 @@ export function ApplicationForm() {
     if (error) setError(null);
   };
 
-  const handleNext = () => {
-    if (step === 2) {
-      // Validate M-Pesa message before proceeding to review
+  const validateStep = () => {
+    if (step === 0) {
+      if (!formData.name || !formData.phone || !formData.email || !formData.idNumber || !formData.county || !formData.ward) {
+        setError("Please fill in all personal details.");
+        return false;
+      }
+    } else if (step === 1) {
+      if (!formData.jobRole || !formData.education || !formData.qualifications) {
+        setError("Please provide your target role and qualifications.");
+        return false;
+      }
+    } else if (step === 2) {
       const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
       if (!match) {
-        setError("Invalid M-Pesa message format. Please paste the complete confirmation message exactly as received from Safaricom.");
-        return;
+        setError("Invalid M-Pesa message. Please paste the ENTIRE confirmation message exactly as received from Safaricom.");
+        return false;
       }
       const amount = parseFloat(match[2].replace(/,/g, ''));
       if (amount < 950) {
-        setError(`The payment amount detected is Ksh ${amount}, but Ksh 950 is required.`);
-        return;
+        setError(`Insufficient amount detected (Ksh ${amount}). The registration fee is Ksh 950.`);
+        return false;
       }
     }
-    setStep(prev => prev + 1);
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateStep()) {
+      setError(null);
+      setStep(prev => prev + 1);
+    }
   };
 
   const handleBack = () => {
@@ -84,8 +99,8 @@ export function ApplicationForm() {
         desiredJobRole: formData.jobRole
       });
       setAiSuggestions(result);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setAiLoading(false);
     }
@@ -99,7 +114,6 @@ export function ApplicationForm() {
     setError(null);
 
     try {
-      // 1. Ensure user is authenticated (using anonymous auth for applicants)
       let currentUser = user;
       if (!currentUser) {
         const authResult = await signInAnonymously(auth);
@@ -108,28 +122,25 @@ export function ApplicationForm() {
 
       if (!currentUser) throw new Error("Authentication failed");
 
-      // 2. Parse M-Pesa Message
       const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
-      if (!match) {
-        throw new Error("Invalid M-Pesa message. Please ensure you copied the full message from Safaricom.");
-      }
+      if (!match) throw new Error("Invalid M-Pesa message format.");
+      
       const transactionCode = match[1].toUpperCase();
 
-      // 3. Check for uniqueness of transaction code
+      // Check uniqueness of M-Pesa code
       const transactionRef = doc(firestore, 'payment_transactions', transactionCode);
       const transactionSnap = await getDoc(transactionRef);
 
       if (transactionSnap.exists()) {
-        throw new Error("This M-Pesa transaction code has already been used for another application.");
+        throw new Error("This M-Pesa transaction code has already been used for another application. Duplicate payments are not accepted.");
       }
 
-      // 4. Create references
       const applicantId = currentUser.uid;
       const applicationId = crypto.randomUUID();
+      
       const applicantProfileRef = doc(firestore, 'users', applicantId, 'applicant_profile');
       const applicationRef = doc(firestore, 'users', applicantId, 'applications', applicationId);
 
-      // 5. Submit data (Atomic-ish)
       // Save Profile
       await setDoc(applicantProfileRef, {
         id: applicantId,
@@ -143,7 +154,7 @@ export function ApplicationForm() {
         registrationDate: new Date().toISOString()
       });
 
-      // Save Transaction (Ensures uniqueness via doc ID)
+      // Save Transaction
       await setDoc(transactionRef, {
         id: transactionCode,
         mpesaTransactionCode: transactionCode,
@@ -164,10 +175,10 @@ export function ApplicationForm() {
         status: 'Pending Payment Verification'
       });
 
-      setStep(STEPS.length); // Success state
+      setStep(STEPS.length);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred. Please try again.");
+      setError(err.message || "An unexpected error occurred.");
       toast({
         variant: "destructive",
         title: "Submission Error",
@@ -187,20 +198,20 @@ export function ApplicationForm() {
               <CheckCircle2 className="h-12 w-12 text-green-600" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold font-headline text-primary">Application Received</h2>
+          <h2 className="text-3xl font-bold font-headline text-accent uppercase">Application Received</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Thank you {formData.name}. Your application for {formData.jobRole || 'Canada Jobs'} is currently being reviewed. 
+            Thank you {formData.name}. Your application for {formData.jobRole} is being processed. 
           </p>
-          <div className="bg-muted p-4 rounded-lg text-sm text-left">
-            <p className="font-bold mb-2">Next Steps:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Our agents will verify your M-Pesa transaction code.</li>
-              <li>You will receive a confirmation SMS within 2 hours.</li>
-              <li>A scheduled interview call will follow via {formData.phone}.</li>
+          <div className="bg-muted p-6 rounded-2xl text-sm text-left border-l-4 border-primary">
+            <p className="font-bold text-accent mb-2 uppercase">Next Steps:</p>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              <li>Our agents will verify your M-Pesa transaction code <strong>({formData.mpesaMessage.match(MPESA_MESSAGE_REGEX)?.[1]})</strong>.</li>
+              <li>Verification takes 1-2 hours during working hours.</li>
+              <li>You will receive an interview schedule via SMS/Phone.</li>
             </ol>
           </div>
           <div className="pt-4">
-            <Button onClick={() => window.location.href = '/'} className="bg-primary">Return Home</Button>
+            <Button onClick={() => window.location.href = '/'} className="bg-primary hover:bg-primary/90">Return Home</Button>
           </div>
         </CardContent>
       </Card>
@@ -221,9 +232,9 @@ export function ApplicationForm() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-red-50 border-red-200">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Validation Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -289,28 +300,28 @@ export function ApplicationForm() {
                       size="sm" 
                       onClick={getAiHelp} 
                       disabled={!formData.qualifications || aiLoading}
-                      className="text-primary gap-2"
+                      className="text-primary border-primary gap-2"
                     >
                       {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      AI Counselor
+                      AI Matcher
                     </Button>
                   </div>
                   <Textarea 
                     id="qualifications" 
                     value={formData.qualifications} 
                     onChange={e => handleChange('qualifications', e.target.value)} 
-                    placeholder="Describe your work history and any relevant skills..." 
-                    className="min-h-[150px]"
+                    placeholder="Briefly describe your work history and skills..." 
+                    className="min-h-[120px]"
                     required
                   />
                   {aiSuggestions && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-2 text-primary font-bold text-xs">
                         <Sparkles className="h-4 w-4" />
                         AI Counselor Suggestions
                       </div>
-                      <div className="text-sm space-y-2">
-                        <p className="font-medium">Recommended Roles:</p>
+                      <div className="text-[11px] space-y-2 text-muted-foreground">
+                        <p className="font-bold text-accent">Recommended Roles:</p>
                         <div className="flex flex-wrap gap-2">
                           {aiSuggestions.recommendedJobs.map(job => (
                             <Button key={job} variant="secondary" size="sm" onClick={() => handleChange('jobRole', job)} className="h-7 text-[10px]">
@@ -318,19 +329,6 @@ export function ApplicationForm() {
                             </Button>
                           ))}
                         </div>
-                        <p className="font-medium pt-2">Tailored Statement:</p>
-                        <p className="italic text-muted-foreground bg-white p-3 rounded border text-xs">
-                          {aiSuggestions.tailoredStatement}
-                        </p>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full text-xs"
-                          onClick={() => handleChange('qualifications', formData.qualifications + '\n\n' + aiSuggestions.tailoredStatement)}
-                        >
-                          Use this Statement
-                        </Button>
                       </div>
                     </div>
                   )}
@@ -339,62 +337,43 @@ export function ApplicationForm() {
             )}
 
             {step === 2 && (
-              <div className="space-y-6 py-2">
-                <div className="bg-red-50 border border-red-100 rounded-xl p-6 flex gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center shrink-0">
-                    <Info className="text-white" />
+              <div className="space-y-6">
+                <div className="bg-accent rounded-2xl p-6 text-white space-y-4">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="h-6 w-6 text-primary" />
+                    <h3 className="font-bold uppercase tracking-tight">Fee Verification (Ksh 950)</h3>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-primary mb-1">Registration Fee (Ksh 950)</h3>
-                    <p className="text-sm text-muted-foreground">
-                      This fee covers application processing, document vetting, and initial assessment. It is 100% refundable if you are not selected for an interview.
-                    </p>
-                  </div>
+                  <p className="text-xs text-blue-100 leading-relaxed">
+                    The registration fee is mandatory for all applicants. It covers background checks, document verification, and initial screening. This ensures only serious candidates are processed for the recruitment drive.
+                  </p>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="bg-white border-2 border-accent rounded-xl p-6 space-y-4 shadow-sm">
-                    <div className="flex items-center gap-2 font-bold text-accent">
-                      <Smartphone className="h-5 w-5" />
-                      M-Pesa Payment Procedure
+                <div className="bg-white border-2 border-primary rounded-2xl p-6 space-y-6 shadow-sm">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Lipa na M-Pesa Till</p>
+                      <p className="text-3xl font-black text-accent">937226</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-1">
-                        <p className="text-muted-foreground">Till Number:</p>
-                        <p className="text-2xl font-bold text-primary">937226</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-muted-foreground">Till Name:</p>
-                        <p className="text-lg font-bold">RECRUITMENT SERVICES</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-muted-foreground">Amount:</p>
-                        <p className="text-lg font-bold">Ksh 950</p>
-                      </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Merchant Name</p>
+                      <p className="text-sm font-bold text-primary">RECRUITMENT SERVICES</p>
                     </div>
-                    <div className="h-px bg-muted w-full my-2" />
-                    <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
-                      <li>Go to <strong>M-Pesa</strong> &gt; <strong>Lipa na M-PESA</strong></li>
-                      <li>Select <strong>Buy Goods and Services</strong></li>
-                      <li>Enter Till No: <strong>937226</strong></li>
-                      <li>Enter Amount: <strong>950</strong></li>
-                      <li>Complete the transaction with your PIN</li>
-                    </ol>
                   </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="mpesaMessage" className="text-primary font-bold">Paste Complete M-Pesa Message</Label>
+                  
+                  <div className="space-y-4">
+                    <Label htmlFor="mpesaMessage" className="text-accent font-bold uppercase text-xs">Paste Complete Safaricom Message</Label>
                     <Textarea 
                       id="mpesaMessage" 
                       value={formData.mpesaMessage} 
                       onChange={e => handleChange('mpesaMessage', e.target.value)} 
-                      placeholder="Paste the entire confirmation message here (e.g., QXA12BC34 Confirmed. Ksh950.00 paid to RECRUITMENT SERVICES...)" 
-                      className="min-h-[120px] font-mono text-sm"
+                      placeholder="Paste the FULL confirmation message here..." 
+                      className="min-h-[120px] font-mono text-xs border-accent/20"
                       required 
                     />
-                    <p className="text-[10px] text-muted-foreground">
-                      * Ensure the message includes the transaction code, amount, and date.
-                    </p>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground bg-muted p-3 rounded-lg">
+                      <Info className="h-4 w-4 shrink-0 text-primary" />
+                      <p>Verification is automated. Ensure the message includes the <strong>Transaction Code, Amount (Ksh 950), and Merchant Name</strong>. Unaltered messages are verified instantly.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -402,52 +381,55 @@ export function ApplicationForm() {
 
             {step === 3 && (
               <div className="space-y-6">
-                <h3 className="font-headline text-xl font-bold text-primary border-b pb-2">Final Review</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <h3 className="font-headline text-xl font-bold text-accent border-b pb-2 uppercase italic">Review Application</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase font-bold">Full Name</p>
-                      <p className="font-medium text-lg">{formData.name}</p>
+                      <p className="text-muted-foreground text-[10px] uppercase font-black tracking-widest mb-1">Full Legal Name</p>
+                      <p className="font-bold text-lg text-accent">{formData.name}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase font-bold">Contact</p>
-                      <p className="font-medium">{formData.phone}</p>
-                      <p className="font-medium">{formData.email}</p>
+                      <p className="text-muted-foreground text-[10px] uppercase font-black tracking-widest mb-1">Contact Details</p>
+                      <p className="font-medium text-accent">{formData.phone}</p>
+                      <p className="font-medium text-accent">{formData.email}</p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase font-bold">Applied For</p>
-                      <p className="font-medium text-lg text-accent">{formData.jobRole}</p>
+                      <p className="text-muted-foreground text-[10px] uppercase font-black tracking-widest mb-1">Target Position</p>
+                      <p className="font-bold text-lg text-primary uppercase italic">{formData.jobRole}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs uppercase font-bold">M-Pesa Verification</p>
-                      <div className="bg-muted p-2 rounded mt-1 overflow-hidden">
-                        <p className="font-mono text-[10px] break-words">{formData.mpesaMessage || 'Message not provided'}</p>
+                      <p className="text-muted-foreground text-[10px] uppercase font-black tracking-widest mb-1">Payment Reference</p>
+                      <div className="bg-muted p-3 rounded-xl border border-dashed border-accent/20">
+                        <p className="font-mono text-[10px] text-accent break-all">{formData.mpesaMessage.match(MPESA_MESSAGE_REGEX)?.[1] || 'Code Extraction Failed'}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="pt-4 p-4 bg-primary/5 rounded-lg text-xs text-muted-foreground italic border border-primary/10">
-                  By submitting, you authorize Canada Pathway Jobs to process your data for recruitment purposes. Incomplete applications or unverified payments will not be processed.
-                </div>
+                <Alert className="bg-primary/5 border-primary/20">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-[11px] font-medium italic text-muted-foreground">
+                    By submitting, you confirm that all information provided is true. Any discrepancy in the M-Pesa message or ID details will lead to immediate disqualification.
+                  </AlertDescription>
+                </Alert>
               </div>
             )}
 
-            <div className="flex justify-between items-center mt-12 pt-6 border-t">
+            <div className="flex justify-between items-center mt-12 pt-6 border-t border-muted">
               {step > 0 && (
-                <Button type="button" variant="outline" onClick={handleBack} disabled={loading}>
-                  Back
+                <Button type="button" variant="ghost" onClick={handleBack} disabled={loading} className="text-accent hover:text-primary">
+                  Go Back
                 </Button>
               )}
               <div className="ml-auto">
                 {step < STEPS.length - 1 ? (
-                  <Button type="button" onClick={handleNext} className="bg-primary px-8">
-                    Continue to {STEPS[step + 1]}
+                  <Button type="button" onClick={handleNext} className="bg-primary hover:bg-primary/90 px-10 h-12 font-bold uppercase shadow-lg italic">
+                    Next Step
                   </Button>
                 ) : (
-                  <Button type="submit" className="bg-accent hover:bg-accent/90 px-12 h-12 text-lg font-bold" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Confirm & Submit'}
+                  <Button type="submit" className="bg-accent hover:bg-accent/90 px-12 h-14 text-lg font-bold uppercase italic shadow-2xl" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : 'Confirm Submission'}
                   </Button>
                 )}
               </div>
