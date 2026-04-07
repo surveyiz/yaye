@@ -1,327 +1,79 @@
+
 {
   "entities": {
     "Applicant": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Applicant",
       "type": "object",
-      "description": "Stores personal information of an individual applying for a job through the platform. This data is collected during the application process.",
+      "description": "Stores personal information and profile details of the job seeker.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Applicant entity."
-        },
-        "fullName": {
-          "type": "string",
-          "description": "The full name of the applicant."
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The applicant's phone number, starting with '254' and without a plus sign. Example: 254704118070."
-        },
-        "email": {
-          "type": "string",
-          "description": "The applicant's email address.",
-          "format": "email"
-        },
-        "nationalIdNumber": {
-          "type": "string",
-          "description": "The applicant's national identification number."
-        },
-        "county": {
-          "type": "string",
-          "description": "The county where the applicant resides."
-        },
-        "ward": {
-          "type": "string",
-          "description": "The ward where the applicant resides."
-        },
-        "highestEducationQualification": {
-          "type": "string",
-          "description": "The highest education level attained by the applicant. Options: Primary, Secondary, College, University.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "registrationDate": {
-          "type": "string",
-          "description": "The date and time when the applicant's initial information was submitted.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "email": { "type": "string" },
+        "nationalIdNumber": { "type": "string" },
+        "county": { "type": "string" },
+        "ward": { "type": "string" },
+        "highestEducationQualification": { "type": "string" },
+        "registrationDate": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "fullName",
-        "phoneNumber",
-        "email",
-        "nationalIdNumber",
-        "county",
-        "ward",
-        "highestEducationQualification",
-        "registrationDate"
-      ]
-    },
-    "JobPosting": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "JobPosting",
-      "type": "object",
-      "description": "Represents a specific job position available for application, detailing its requirements, general benefits, and application timeline within the Canada recruitment drive.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the JobPosting entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "The official title of the job position (e.g., 'Accounting Clerk', 'Construction Laborer')."
-        },
-        "generalDescription": {
-          "type": "string",
-          "description": "A general description of the Canada recruitment drive and overall context, common to many job postings."
-        },
-        "minimumAge": {
-          "type": "number",
-          "description": "The minimum age requirement for applicants (e.g., 18)."
-        },
-        "languageRequirement": {
-          "type": "string",
-          "description": "Description of language proficiency required (e.g., 'Be conversant English')."
-        },
-        "annualSalaryMin": {
-          "type": "number",
-          "description": "The minimum annual salary in Canadian Dollars (e.g., 69500)."
-        },
-        "annualSalaryCurrency": {
-          "type": "string",
-          "description": "The currency of the annual salary (e.g., 'CAD')."
-        },
-        "applicationDeadline": {
-          "type": "string",
-          "description": "The final date and time for submitting applications for this job posting.",
-          "format": "date-time"
-        },
-        "jobOfferLetterDate": {
-          "type": "string",
-          "description": "The date when job offer letters will be issued for successful applicants.",
-          "format": "date"
-        },
-        "commonBenefitsDescription": {
-          "type": "string",
-          "description": "A detailed description of the common benefits offered to all successful applicants (e.g., 'Free Kenya Passport Application', 'Fully funded scholarships in Canada')."
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "generalDescription",
-        "minimumAge",
-        "languageRequirement",
-        "annualSalaryMin",
-        "annualSalaryCurrency",
-        "applicationDeadline",
-        "jobOfferLetterDate",
-        "commonBenefitsDescription"
-      ]
+      "required": ["id", "fullName", "phoneNumber", "email", "nationalIdNumber", "registrationDate"]
     },
     "Application": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Application",
       "type": "object",
-      "description": "Represents a formal job application submitted by an applicant, linking their personal details to a specific job posting and managing its lifecycle.",
+      "description": "Represents a job application and its multi-stage approval lifecycle.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Application entity."
+        "id": { "type": "string" },
+        "applicantId": { "type": "string" },
+        "jobPostingId": { "type": "string" },
+        "submissionDate": { "type": "string", "format": "date-time" },
+        "status": { 
+          "type": "string", 
+          "enum": ["payment_pending", "payment_approved", "docs_pending", "docs_uploaded", "ecitizen_paid", "docs_approved"],
+          "description": "payment_pending: User submitted Ksh 950. payment_approved: Admin verified payment. docs_uploaded: User uploaded CV/Certs. ecitizen_paid: User paid Ksh 1027. docs_approved: Admin final approval."
         },
-        "applicantId": {
-          "type": "string",
-          "description": "Reference to the Applicant who submitted this application. (Relationship: Applicant 1:N Application)"
-        },
-        "jobPostingId": {
-          "type": "string",
-          "description": "Reference to the specific JobPosting the applicant is applying for. (Relationship: JobPosting 1:N Application)"
-        },
-        "submissionDate": {
-          "type": "string",
-          "description": "The date and time when the application was formally submitted by the applicant.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the application, tracking its progress through the recruitment pipeline. Options: Pending Payment, Payment Verified, Under Review, Interview Scheduled, Offer Issued, Rejected.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "adminNotes": {
-          "type": "string",
-          "description": "Internal notes added by an administrator or HR regarding the application."
-        }
+        "mpesaCode950": { "type": "string" },
+        "mpesaCode1027": { "type": "string" },
+        "educationDetails": { "type": "string" },
+        "documentsUploadedAt": { "type": "string", "format": "date-time" },
+        "finalApprovalDate": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "applicantId",
-        "jobPostingId",
-        "submissionDate",
-        "status"
-      ]
-    },
-    "PaymentTransaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "PaymentTransaction",
-      "type": "object",
-      "description": "Stores the details of an M-Pesa payment made by an applicant for the registration fee, enabling verification and ensuring the uniqueness of transaction codes.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the PaymentTransaction entity."
-        },
-        "mpesaTransactionCode": {
-          "type": "string",
-          "description": "The unique M-Pesa transaction code provided by the applicant. This code must be unique across all recorded transactions to prevent reuse."
-        },
-        "applicantId": {
-          "type": "string",
-          "description": "Reference to the Applicant who made this payment. (Relationship: Applicant 1:N PaymentTransaction)"
-        },
-        "applicationId": {
-          "type": "string",
-          "description": "Reference to the specific Application this payment is for. (Relationship: Application 1:1 PaymentTransaction)"
-        },
-        "amountPaid": {
-          "type": "number",
-          "description": "The amount of the registration fee paid by the applicant (expected to be Ksh. 950)."
-        },
-        "currency": {
-          "type": "string",
-          "description": "The currency of the payment (e.g., 'KSH')."
-        },
-        "paymentDateReported": {
-          "type": "string",
-          "description": "The date and time when the applicant reported the M-Pesa transaction code.",
-          "format": "date-time"
-        },
-        "verificationStatus": {
-          "type": "string",
-          "description": "The status of the M-Pesa transaction code verification (e.g., 'Pending', 'Verified', 'Invalid Code', 'Duplicate Code', 'Amount Mismatch').",
-          "items": {
-            "type": "string"
-          }
-        },
-        "verifiedByAdminId": {
-          "type": "string",
-          "description": "Reference to the unique identifier of the administrator who performed the verification. (Relationship: AdminUser 1:N PaymentTransaction)"
-        },
-        "verificationDate": {
-          "type": "string",
-          "description": "The date and time when the payment transaction was verified by an administrator.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "mpesaTransactionCode",
-        "applicantId",
-        "applicationId",
-        "amountPaid",
-        "currency",
-        "paymentDateReported",
-        "verificationStatus"
-      ]
+      "required": ["id", "applicantId", "jobPostingId", "submissionDate", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["anonymous", "password"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/job_postings/{jobPostingId}",
-        "definition": {
-          "entityName": "JobPosting",
-          "schema": {
-            "$ref": "#/backend/entities/JobPosting"
-          },
-          "description": "Collection of all available job postings. Publicly readable for all authenticated users. Write access is restricted to administrators only. `jobPostingId` refers to the unique identifier for each job posting.",
-          "params": [
-            {
-              "name": "jobPostingId",
-              "description": "The unique identifier of the JobPosting."
-            }
-          ]
-        }
-      },
-      {
         "path": "/users/{userId}/applicant_profile",
         "definition": {
           "entityName": "Applicant",
-          "schema": {
-            "$ref": "#/backend/entities/Applicant"
-          },
-          "description": "Each authenticated user (`userId`) has one `applicant_profile` document storing their personal details for job applications. This structure enforces private, user-owned data where `userId` from the path must match `request.auth.uid`. The `id` field within the document must also match `userId`. This simplifies ownership-based security rules.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase User ID (UID) of the authenticated user who owns this profile."
-            }
-          ]
+          "description": "User's core profile data."
         }
       },
       {
         "path": "/users/{userId}/applications/{applicationId}",
         "definition": {
           "entityName": "Application",
-          "schema": {
-            "$ref": "#/backend/entities/Application"
-          },
-          "description": "Stores individual job applications submitted by a specific user. `userId` in the path ensures that only the owning user or an administrator can access their applications. The document itself contains `applicantId` (matching `userId` from the path) and `jobPostingId` for authorization independence and contextual linking without `get()` calls.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase User ID (UID) of the applicant who submitted this application."
-            },
-            {
-              "name": "applicationId",
-              "description": "The unique identifier of the application."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/payment_transactions/{mpesaTransactionCode}",
-        "definition": {
-          "entityName": "PaymentTransaction",
-          "schema": {
-            "$ref": "#/backend/entities/PaymentTransaction"
-          },
-          "description": "Globally stores M-Pesa payment transaction details, using `mpesaTransactionCode` as the document ID to ensure global uniqueness and prevent duplicate usage. Contains denormalized `applicantId` (the payer) and `applicationId` (the application it's for) to support authorization rules without external lookups. Applicants can create their own transactions, and administrators can verify them.",
-          "params": [
-            {
-              "name": "mpesaTransactionCode",
-              "description": "The unique M-Pesa transaction code, used as the document ID for uniqueness enforcement."
-            }
-          ]
+          "description": "User's job application tracking doc."
         }
       },
       {
         "path": "/admins/{adminId}",
         "definition": {
           "entityName": "Admin",
-          "schema": {
-            "$ref": "#/backend/entities/Admin"
-          },
-          "description": "A collection for Database Access Control (DBAC). Each document in this collection represents an administrator, where the document ID (`adminId`) is the Firebase User ID (UID) of the administrator. Used to check if `request.auth.uid` corresponds to an admin, enabling secure access for administrative tasks. (Implicit 'Admin' entity for role management, schema is minimal with 'id' field matching 'adminId').",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The Firebase User ID (UID) of the administrator."
-            }
-          ]
+          "description": "Database Access Control list for administrators."
+        }
+      },
+      {
+        "path": "/global_applications/{applicationId}",
+        "definition": {
+          "entityName": "Application",
+          "description": "Denormalized collection for administrative overview."
         }
       }
-    ],
-    "reasoning": "The Firestore structure prioritizes secure, scalable, and debuggable access control by strictly adhering to the core design principles and strategy mandates. \n\n**Authorization Independence (CRITICAL) via Denormalization:**\n\n1.  **`Applicant` Data (`/users/{userId}/applicant_profile`):** Each applicant's profile data (`Applicant` entity) is stored directly under their authenticated user ID (`userId`). This means the `userId` in the path matches `request.auth.uid`, making ownership explicit and rules atomic. The `applicantId` field within the document will also be set to `request.auth.uid`, ensuring consistency. No `get()` calls are needed to determine who owns the profile.\n2.  **`Application` Data (`/users/{userId}/applications/{applicationId}`):** Similar to the applicant profile, each `Application` document is nested under the owning `userId`. The document itself contains `applicantId` (which matches the `userId` in the path) and `jobPostingId`. This denormalization means that rules for reading, updating, or deleting an application can directly compare `request.auth.uid` with the `userId` in the path segment or the `applicantId` field within the document, without needing to fetch parent documents. This enables atomic operations and simplifies rule logic.\n3.  **`PaymentTransaction` Data (`/payment_transactions/{mpesaTransactionCode}`):** To enforce the crucial requirement that \"one mpesa message should not be used twice,\" the `mpesaTransactionCode` is used as the document ID for `PaymentTransaction`. The document also denormalizes `applicantId` and `applicationId`. This allows a security rule for `create` operations to check for the global uniqueness of the `mpesaTransactionCode` using `exists()`, preventing duplicate codes and avoiding `get()` calls on potentially related application or applicant documents for authorization decisions. Authorization for an applicant to create or read their own transaction can be based on `applicantId` within the document, which must match `request.auth.uid`.\n4.  **`Admin` Roles (`/admins/{adminId}`):** A dedicated top-level collection `admins` is used, where each document ID (`adminId`) is an administrator's Firebase UID. Authorization for administrative actions (e.g., verifying payments, managing job postings) is achieved by checking for the existence of `request.auth.uid` in this collection, (`exists(/databases/$(database)/documents/admins/$(request.auth.uid))`). This completely decouples role checking from other data, making it robust and easy to debug.\n\n**QAPs (Rules are not Filters):**\n\n1.  **`JobPosting` (`/job_postings/{jobPostingId}`):** These are publicly readable for all authenticated users, meaning `list` operations on this collection are inherently secure as all documents share the same access posture. Write operations are restricted to `admins`.\n2.  **`Applicant` Profile (`/users/{userId}/applicant_profile`):** Access is strictly path-based, meaning `request.auth.uid` must match `userId`. A `list` operation on `/users/{request.auth.uid}/applicant_profile` is secure as it explicitly scopes to the authenticated user's data.\n3.  **`Application` Data (`/users/{userId}/applications/{applicationId}`):** Similar to applicant profiles, `list` operations are scoped to the authenticated user's `userId`. This ensures that an applicant can only list their own applications, preventing accidental data exposure.\n4.  **`PaymentTransaction` (`/payment_transactions/{mpesaTransactionCode}`):** While `create` operations enforce uniqueness via the document ID, `list` operations for non-admins would be denied by default, or could be allowed with strict filters (`.where('applicantId', '==', request.auth.uid)` if needed, but usually, specific `get` access is sufficient for the submitting user). Admin `list` access would be permitted to facilitate verification. The primary security challenge (unique `mpesaTransactionCode`) is handled by the ID structure and `create` rule, not by `list` filtering."
+    ]
   }
 }

@@ -1,111 +1,124 @@
+
+'use client';
+
+import React from 'react';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, CreditCard, Search, MoreHorizontal } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-const mockApplications = [
-  { id: 1, name: "David Kariuki", phone: "254704118001", role: "Warehouse Worker", payment: "QXA12BC34", status: "Pending Verification" },
-  { id: 2, name: "Sarah Mutua", phone: "254712334455", role: "Registered Nurse", payment: "ZZA89DD11", status: "Payment Verified" },
-  { id: 3, name: "John Onyango", phone: "254700998877", role: "Truck Driver", payment: "LLP56GG22", status: "Interview Scheduled" },
-  { id: 4, name: "Faith Wanjiru", phone: "254722556677", role: "Accounting Clerk", payment: "RRT00KK99", status: "Offer Sent" },
-];
-
 export default function AdminDashboard() {
+  const { firestore, user } = useFirebase();
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const appsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'global_applications'), orderBy('submissionDate', 'desc'));
+  }, [firestore]);
+
+  const { data: applications, isLoading } = useCollection(appsQuery);
+
+  const handleUpdateStatus = (app: any, newStatus: string) => {
+    if (!firestore) return;
+    const globalRef = doc(firestore, 'global_applications', app.id);
+    const userRef = doc(firestore, 'users', app.applicantId, 'applications', app.id);
+    
+    const updateData = { status: newStatus };
+    if (newStatus === 'docs_approved') {
+      (updateData as any).finalApprovalDate = new Date().toISOString();
+    }
+
+    updateDocumentNonBlocking(globalRef, updateData);
+    updateDocumentNonBlocking(userRef, updateData);
+  };
+
+  const filteredApps = applications?.filter(app => 
+    app.mpesaCode950?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    app.jobPostingId?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="bg-[#EFF1F7] min-h-screen py-12">
+    <div className="bg-[#EFF1F7] min-h-screen py-8">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="space-y-1">
-            <h1 className="font-headline text-3xl font-bold text-primary">Recruiter Dashboard</h1>
-            <p className="text-muted-foreground text-sm">Manage job applications and verify payments.</p>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+          <div>
+            <h1 className="font-headline text-3xl font-bold text-accent uppercase">Admin Control Panel</h1>
+            <p className="text-muted-foreground">Manage recruitment stages and document verification.</p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" className="gap-2 bg-white">
-              <Search className="h-4 w-4" />
-              Export List
-            </Button>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search M-Pesa Code..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Applicants</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1,284</div>
-              <p className="text-xs text-muted-foreground">+18% from last week</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">42</div>
-              <p className="text-xs text-muted-foreground">Requires manual check</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
-              <Users className="h-4 w-4 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">156</div>
-              <p className="text-xs text-muted-foreground">For 8th April Intake</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-none shadow-sm overflow-hidden">
-          <CardHeader className="bg-white border-b flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Recent Applications</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search name or phone..." className="pl-8 h-9" />
-            </div>
-          </CardHeader>
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Applicant</TableHead>
-                <TableHead>Target Role</TableHead>
-                <TableHead>M-Pesa Code</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="bg-white">
-              {mockApplications.map((app) => (
-                <TableRow key={app.id}>
-                  <TableCell>
-                    <div className="font-medium">{app.name}</div>
-                    <div className="text-xs text-muted-foreground">{app.phone}</div>
-                  </TableCell>
-                  <TableCell>{app.role}</TableCell>
-                  <TableCell>
-                    <code className="text-xs font-mono bg-muted p-1 rounded">{app.payment}</code>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={app.status === 'Offer Sent' ? 'default' : 'secondary'} className="font-normal">
-                      {app.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <Card className="border-none shadow-xl overflow-hidden">
+            <Table>
+              <TableHeader className="bg-white border-b">
+                <TableRow>
+                  <TableHead>Submission</TableHead>
+                  <TableHead>Target Job</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment (950)</TableHead>
+                  <TableHead>Payment (1027)</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHeader>
+              <TableBody className="bg-white">
+                {filteredApps?.map((app) => (
+                  <TableRow key={app.id}>
+                    <TableCell className="text-xs">
+                      {new Date(app.submissionDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="font-bold text-accent">{app.jobPostingId}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="capitalize">
+                        {app.status.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-[10px] bg-muted px-2 py-1 rounded">{app.mpesaCode950}</code>
+                    </TableCell>
+                    <TableCell>
+                      {app.mpesaCode1027 ? (
+                        <code className="text-[10px] bg-blue-50 px-2 py-1 rounded text-blue-700">{app.mpesaCode1027}</code>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {app.status === 'payment_pending' && (
+                        <Button size="sm" onClick={() => handleUpdateStatus(app, 'payment_approved')} className="bg-green-600 hover:bg-green-700 h-8">
+                          Approve 950
+                        </Button>
+                      )}
+                      {app.status === 'ecitizen_paid' && (
+                        <Button size="sm" onClick={() => handleUpdateStatus(app, 'docs_approved')} className="bg-primary hover:bg-primary/90 h-8">
+                          Final Approval
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-8">
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
       </div>
     </div>
   );
