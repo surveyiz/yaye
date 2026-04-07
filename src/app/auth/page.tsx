@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, LogIn, UserPlus, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function AuthPage() {
+function AuthContent() {
   const { auth } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -119,5 +119,17 @@ export default function AuthPage() {
         Secure authentication ensures your recruitment data and payment records are protected.
       </p>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#EFF1F7]">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
   );
 }
