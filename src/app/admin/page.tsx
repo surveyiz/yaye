@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle, AlertCircle, GraduationCap } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, Lock, LogIn, LogOut, UserCircle, AlertCircle, GraduationCap, ShieldCheck, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -62,11 +62,7 @@ export default function AdminDashboard() {
         toast({ title: "Login Successful", description: "Welcome back, Admin." });
       }
     } catch (err: any) {
-      toast({ 
-        variant: "destructive", 
-        title: isRegistering ? "Registration Failed" : "Login Failed", 
-        description: err.message 
-      });
+      toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
       setIsLoggingIn(false);
     }
@@ -75,30 +71,17 @@ export default function AdminDashboard() {
   const handleSignOut = async () => {
     if (!auth) return;
     await auth.signOut();
-    toast({ title: "Signed Out", description: "Admin session ended." });
   };
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
-    if (!firestore || !app?.id || !app?.applicantId) {
-      toast({ variant: "destructive", title: "Error", description: "Invalid application data." });
-      return;
-    }
-    
+    if (!firestore || !app?.id || !app?.applicantId) return;
     const globalRef = doc(firestore, 'global_applications', app.id);
     const userRef = doc(firestore, 'users', app.applicantId, 'applications', app.id);
-    
     const updateData: any = { status: newStatus };
-    if (newStatus === 'docs_approved') {
-      updateData.finalApprovalDate = new Date().toISOString();
-    }
-
+    if (newStatus === 'docs_approved') updateData.finalApprovalDate = new Date().toISOString();
     updateDocumentNonBlocking(globalRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-
-    toast({
-      title: "Status Updated",
-      description: `Application moved to ${newStatus.replace('_', ' ')}.`,
-    });
+    toast({ title: "Updated", description: `Application moved to ${newStatus}.` });
   };
 
   const handleBootstrapAdmin = async () => {
@@ -110,7 +93,7 @@ export default function AdminDashboard() {
         role: 'super_admin',
         grantedAt: new Date().toISOString()
       });
-      toast({ title: "Admin Access Granted", description: "You now have permission to manage applications." });
+      toast({ title: "Access Granted", description: "Dashboard unlocked." });
     } catch (err: any) {
       toast({ variant: "destructive", title: "Setup Failed", description: err.message });
     } finally {
@@ -120,7 +103,6 @@ export default function AdminDashboard() {
 
   const filteredApps = applications?.filter(app => 
     app.mpesaCode950?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.mpesaCode1027?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.jobPostingId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -129,80 +111,25 @@ export default function AdminDashboard() {
   if (!user || (!adminData && user.email !== 'aicystevens0@gmail.com') || (appsError && appsError.name === 'FirebaseError')) {
     return (
       <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none rounded-3xl">
-          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-            <Lock className="h-8 w-8 text-primary" />
-          </div>
+        <Card className="max-w-md w-full p-6 md:p-10 text-center space-y-6 shadow-2xl border-none rounded-3xl">
+          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto"><Lock className="h-8 w-8 text-primary" /></div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-accent uppercase italic">Admin Access</h2>
-            <p className="text-muted-foreground text-sm">Please sign in with administrative credentials to access the Recruitment Command Center.</p>
+            <h2 className="text-xl md:text-2xl font-black text-accent uppercase italic">Admin Access</h2>
+            <p className="text-muted-foreground text-xs">Sign in to access the Recruitment Command Center.</p>
           </div>
-
           {!user ? (
             <form onSubmit={handleAuth} className="space-y-4 text-left">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-accent hover:bg-accent/90 h-12 font-bold uppercase italic shadow-lg"
-                disabled={isLoggingIn}
-              >
-                {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : (isRegistering ? <UserPlus className="mr-2 h-5 w-5" /> : <LogIn className="mr-2 h-5 w-5" />)}
-                {isRegistering ? "Register Admin" : "Sign In"}
+              <div className="space-y-1"><Label className="text-[10px] uppercase font-bold">Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+              <div className="space-y-1"><Label className="text-[10px] uppercase font-bold">Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+              <Button type="submit" className="w-full bg-accent h-12 font-bold uppercase italic shadow-lg" disabled={isLoggingIn}>
+                {isLoggingIn ? <Loader2 className="animate-spin" /> : (isRegistering ? "Register Admin" : "Sign In")}
               </Button>
-              <div className="text-center pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setIsRegistering(!isRegistering)}
-                  className="text-[10px] font-bold uppercase text-primary hover:underline"
-                >
-                  {isRegistering ? "Already have account? Sign In" : "Need to register? Sign Up"}
-                </button>
-              </div>
+              <div className="text-center"><button type="button" onClick={() => setIsRegistering(!isRegistering)} className="text-[10px] font-bold uppercase text-primary underline">{isRegistering ? "Back to Login" : "Register Admin"}</button></div>
             </form>
           ) : (
             <div className="space-y-4">
-               {appsError && (
-                 <Alert variant="destructive" className="text-left">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Access denied. Your account does not have recruitment privileges yet.
-                    </AlertDescription>
-                 </Alert>
-               )}
-               <div className="bg-muted p-4 rounded-xl text-xs font-bold text-accent uppercase italic flex items-center justify-center gap-2">
-                <UserCircle className="h-4 w-4" /> {user.email}
-               </div>
-               <Button 
-                onClick={handleBootstrapAdmin} 
-                disabled={isBootstrapping}
-                variant="outline"
-                className="w-full h-12 font-bold uppercase italic border-primary text-primary hover:bg-primary/10"
-              >
-                {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
-                Grant My Admin Access
-              </Button>
-              <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground">
-                <LogOut className="mr-2 h-4 w-4" /> Sign Out
-              </Button>
+              <Button onClick={handleBootstrapAdmin} disabled={isBootstrapping} className="w-full h-12 font-bold uppercase italic"><ShieldCheck className="mr-2 h-5 w-5" /> Grant Admin Access</Button>
+              <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground"><LogOut className="mr-2 h-4 w-4" /> Sign Out</Button>
             </div>
           )}
         </Card>
@@ -211,135 +138,64 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="bg-[#EFF1F7] min-h-screen py-8">
+    <div className="bg-[#EFF1F7] min-h-screen py-6 md:py-12">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-4">
-              <h1 className="font-headline text-3xl font-bold text-accent uppercase italic">Recruitment Command Center</h1>
-              <Button variant="outline" size="sm" onClick={handleSignOut} className="border-accent text-accent hover:bg-accent hover:text-white font-bold uppercase text-[10px]">
-                <LogOut className="mr-2 h-3 w-3" /> Sign Out
-              </Button>
-            </div>
-            <p className="text-muted-foreground text-sm font-bold uppercase italic text-primary">Admin Active: {user?.email}</p>
+            <h1 className="font-headline text-2xl md:text-3xl font-bold text-accent uppercase italic">Recruitment Command</h1>
+            <p className="text-[10px] text-primary font-bold uppercase">{user?.email}</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <div className="relative flex-1 md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search Transaction Code..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 border-2"
-              />
+              <Input placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-10 border-2" />
             </div>
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="border-accent text-accent font-bold uppercase text-[10px] hidden md:flex"><LogOut className="mr-1 h-3 w-3" /> Exit</Button>
           </div>
         </div>
 
-        {isAppsLoading ? (
-          <div className="flex justify-center p-12">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Card className="border-none shadow-2xl overflow-hidden rounded-3xl">
-            <Table>
-              <TableHeader className="bg-accent text-white border-none">
-                <TableRow className="hover:bg-accent border-none">
-                  <TableHead className="text-white font-bold uppercase text-[10px]">Submission</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">Position</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">Status</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">M-Pesa 950</TableHead>
-                  <TableHead className="text-white font-bold uppercase text-[10px]">eCitizen 1027</TableHead>
-                  <TableHead className="text-right text-white font-bold uppercase text-[10px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="bg-white">
-                {filteredApps?.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                      No applications pending review.
-                    </TableCell>
+        {isAppsLoading ? <div className="flex justify-center p-12"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : (
+          <Card className="border-none shadow-xl overflow-hidden rounded-2xl md:rounded-3xl">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-accent text-white">
+                  <TableRow className="hover:bg-accent border-none">
+                    <TableHead className="text-white font-bold uppercase text-[9px]">Submission</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px]">Position</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px]">Status</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px]">M-Pesa 950</TableHead>
+                    <TableHead className="text-right text-white font-bold uppercase text-[9px]">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredApps?.map((app) => (
+                </TableHeader>
+                <TableBody className="bg-white">
+                  {filteredApps?.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic text-xs">No records found.</TableCell></TableRow> : filteredApps?.map(app => (
                     <TableRow key={app.id} className="border-b last:border-none">
-                      <TableCell className="text-[10px] font-medium text-muted-foreground">
-                        {new Date(app.submissionDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="font-black text-accent uppercase italic text-xs">
-                        {app.jobPostingId}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`uppercase text-[9px] px-3 py-1 font-bold ${
-                          app.status === 'docs_approved' ? 'bg-green-600' : 
-                          app.status === 'ecitizen_paid' ? 'bg-blue-600' : 'bg-muted text-accent'
-                        }`}>
-                          {app.status.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded text-primary">{app.mpesaCode950}</code>
-                      </TableCell>
-                      <TableCell>
-                        {app.mpesaCode1027 ? (
-                          <code className="text-[10px] font-bold bg-blue-50 px-2 py-1 rounded text-blue-700">{app.mpesaCode1027}</code>
-                        ) : (
-                          <span className="text-muted-foreground italic text-[10px]">Pending</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        {app.status === 'payment_pending' && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleUpdateStatus(app, 'payment_approved')} 
-                            className="bg-green-600 hover:bg-green-700 h-8 font-bold text-[10px] uppercase"
-                          >
-                            Approve 950
-                          </Button>
-                        )}
+                      <TableCell className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">{new Date(app.submissionDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-black text-accent uppercase italic text-[10px]">{app.jobPostingId}</TableCell>
+                      <TableCell><Badge className="uppercase text-[8px] px-2 py-0.5 font-bold">{app.status.replace('_', ' ')}</Badge></TableCell>
+                      <TableCell><code className="text-[9px] font-bold bg-slate-100 px-1.5 py-0.5 rounded">{app.mpesaCode950}</code></TableCell>
+                      <TableCell className="text-right space-x-1 whitespace-nowrap">
+                        {app.status === 'payment_pending' && <Button size="sm" onClick={() => handleUpdateStatus(app, 'payment_approved')} className="bg-green-600 h-7 text-[9px] uppercase font-bold">Approve 950</Button>}
                         <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8">
-                              <GraduationCap className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="uppercase italic font-headline text-accent">Academic Credentials</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="bg-muted/50 p-4 rounded-xl border space-y-3">
-                                <div className="flex justify-between items-center border-b pb-2">
-                                  <span className="text-[10px] font-black uppercase text-slate-500">KCPE Certificate</span>
-                                  <span className="font-bold text-accent">{app.certificateNumbers?.kcpe || 'Not Provided'}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-b pb-2">
-                                  <span className="text-[10px] font-black uppercase text-slate-500">KCSE Certificate</span>
-                                  <span className="font-bold text-accent">{app.certificateNumbers?.kcse || 'Not Provided'}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-[10px] font-black uppercase text-slate-500">Tertiary Certificate</span>
-                                  <span className="font-bold text-accent">{app.certificateNumbers?.tertiary || 'Not Provided'}</span>
-                                </div>
+                          <DialogTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0"><GraduationCap className="h-4 w-4" /></Button></DialogTrigger>
+                          <DialogContent className="max-w-[90vw] md:max-w-md rounded-2xl">
+                            <DialogHeader><DialogTitle className="uppercase italic font-headline text-accent text-sm">Academic Dossier</DialogTitle></DialogHeader>
+                            <div className="space-y-4 py-4 text-xs">
+                              <div className="bg-muted/50 p-4 rounded-xl border space-y-2">
+                                <div className="flex justify-between border-b pb-1"><span>KCPE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcpe || '---'}</span></div>
+                                <div className="flex justify-between border-b pb-1"><span>KCSE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcse || '---'}</span></div>
+                                <div className="flex justify-between"><span>Tertiary</span><span className="font-bold text-accent">{app.certificateNumbers?.tertiary || '---'}</span></div>
                               </div>
                             </div>
                           </DialogContent>
                         </Dialog>
-                        {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleUpdateStatus(app, 'docs_approved')} 
-                            className="bg-primary hover:bg-primary/90 h-8 font-bold text-[10px] uppercase italic"
-                          >
-                            Final Approve
-                          </Button>
-                        )}
+                        {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && <Button size="sm" onClick={() => handleUpdateStatus(app, 'docs_approved')} className="bg-primary h-7 text-[9px] uppercase font-bold italic">Final Appr.</Button>}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </Card>
         )}
       </div>

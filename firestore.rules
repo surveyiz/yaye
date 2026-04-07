@@ -25,7 +25,8 @@ service cloud.firestore {
     }
 
     match /global_applications/{applicationId} {
-      allow get, list: if isAdmin();
+      // Allow list for uniqueness checks by transaction code
+      allow get, list: if isSignedIn() || isAdmin();
       allow create: if isSignedIn();
       allow update: if isAdmin() || (isSignedIn() && request.resource.data.applicantId == request.auth.uid);
     }
