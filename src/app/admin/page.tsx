@@ -142,15 +142,15 @@ export default function AdminDashboard() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="font-headline text-2xl md:text-3xl font-bold text-accent uppercase italic">Recruitment Command</h1>
-            <p className="text-[10px] text-primary font-bold uppercase">{user?.email}</p>
+            <h1 className="font-headline text-xl md:text-3xl font-bold text-accent uppercase italic">Recruitment Command</h1>
+            <p className="text-[10px] text-primary font-bold uppercase truncate max-w-[200px] md:max-w-none">{user?.email}</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <div className="relative flex-1 md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-10 border-2" />
+              <Input placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-10 border-2 text-xs" />
             </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut} className="border-accent text-accent font-bold uppercase text-[10px] hidden md:flex"><LogOut className="mr-1 h-3 w-3" /> Exit</Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="border-accent text-accent font-bold uppercase text-[10px] shrink-0"><LogOut className="mr-1 h-3 w-3" /> Exit</Button>
           </div>
         </div>
 
@@ -160,36 +160,38 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader className="bg-accent text-white">
                   <TableRow className="hover:bg-accent border-none">
-                    <TableHead className="text-white font-bold uppercase text-[9px]">Submission</TableHead>
-                    <TableHead className="text-white font-bold uppercase text-[9px]">Position</TableHead>
-                    <TableHead className="text-white font-bold uppercase text-[9px]">Status</TableHead>
-                    <TableHead className="text-white font-bold uppercase text-[9px]">M-Pesa 950</TableHead>
-                    <TableHead className="text-right text-white font-bold uppercase text-[9px]">Actions</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px] px-3">Date</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px] px-3">Role</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px] px-3">Status</TableHead>
+                    <TableHead className="text-white font-bold uppercase text-[9px] px-3">M-Pesa</TableHead>
+                    <TableHead className="text-right text-white font-bold uppercase text-[9px] px-3">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="bg-white">
                   {filteredApps?.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic text-xs">No records found.</TableCell></TableRow> : filteredApps?.map(app => (
                     <TableRow key={app.id} className="border-b last:border-none">
-                      <TableCell className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">{new Date(app.submissionDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="font-black text-accent uppercase italic text-[10px]">{app.jobPostingId}</TableCell>
-                      <TableCell><Badge className="uppercase text-[8px] px-2 py-0.5 font-bold">{app.status.replace('_', ' ')}</Badge></TableCell>
-                      <TableCell><code className="text-[9px] font-bold bg-slate-100 px-1.5 py-0.5 rounded">{app.mpesaCode950}</code></TableCell>
-                      <TableCell className="text-right space-x-1 whitespace-nowrap">
-                        {app.status === 'payment_pending' && <Button size="sm" onClick={() => handleUpdateStatus(app, 'payment_approved')} className="bg-green-600 h-7 text-[9px] uppercase font-bold">Approve 950</Button>}
-                        <Dialog>
-                          <DialogTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0"><GraduationCap className="h-4 w-4" /></Button></DialogTrigger>
-                          <DialogContent className="max-w-[90vw] md:max-w-md rounded-2xl">
-                            <DialogHeader><DialogTitle className="uppercase italic font-headline text-accent text-sm">Academic Dossier</DialogTitle></DialogHeader>
-                            <div className="space-y-4 py-4 text-xs">
-                              <div className="bg-muted/50 p-4 rounded-xl border space-y-2">
-                                <div className="flex justify-between border-b pb-1"><span>KCPE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcpe || '---'}</span></div>
-                                <div className="flex justify-between border-b pb-1"><span>KCSE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcse || '---'}</span></div>
-                                <div className="flex justify-between"><span>Tertiary</span><span className="font-bold text-accent">{app.certificateNumbers?.tertiary || '---'}</span></div>
+                      <TableCell className="text-[9px] font-medium text-muted-foreground whitespace-nowrap px-3">{new Date(app.submissionDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-black text-accent uppercase italic text-[9px] md:text-[10px] px-3 truncate max-w-[80px] md:max-w-none">{app.jobPostingId}</TableCell>
+                      <TableCell className="px-3"><Badge className="uppercase text-[7px] md:text-[8px] px-2 py-0.5 font-bold whitespace-nowrap">{app.status.replace('_', ' ')}</Badge></TableCell>
+                      <TableCell className="px-3"><code className="text-[8px] md:text-[9px] font-bold bg-slate-100 px-1.5 py-0.5 rounded">{app.mpesaCode950}</code></TableCell>
+                      <TableCell className="text-right space-x-1 whitespace-nowrap px-3">
+                        <div className="flex justify-end gap-1">
+                          {app.status === 'payment_pending' && <Button size="sm" onClick={() => handleUpdateStatus(app, 'payment_approved')} className="bg-green-600 h-6 md:h-7 px-2 text-[8px] md:text-[9px] uppercase font-bold">Approve</Button>}
+                          <Dialog>
+                            <DialogTrigger asChild><Button variant="ghost" size="sm" className="h-6 w-6 md:h-7 md:w-7 p-0"><GraduationCap className="h-3.5 w-3.5 md:h-4 md:w-4" /></Button></DialogTrigger>
+                            <DialogContent className="max-w-[90vw] md:max-w-md rounded-2xl">
+                              <DialogHeader><DialogTitle className="uppercase italic font-headline text-accent text-sm">Academic Dossier</DialogTitle></DialogHeader>
+                              <div className="space-y-4 py-4 text-xs">
+                                <div className="bg-muted/50 p-4 rounded-xl border space-y-2">
+                                  <div className="flex justify-between border-b pb-1"><span>KCPE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcpe || '---'}</span></div>
+                                  <div className="flex justify-between border-b pb-1"><span>KCSE No.</span><span className="font-bold text-accent">{app.certificateNumbers?.kcse || '---'}</span></div>
+                                  <div className="flex justify-between"><span>Tertiary</span><span className="font-bold text-accent">{app.certificateNumbers?.tertiary || '---'}</span></div>
+                                </div>
                               </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && <Button size="sm" onClick={() => handleUpdateStatus(app, 'docs_approved')} className="bg-primary h-7 text-[9px] uppercase font-bold italic">Final Appr.</Button>}
+                            </DialogContent>
+                          </Dialog>
+                          {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && <Button size="sm" onClick={() => handleUpdateStatus(app, 'docs_approved')} className="bg-primary h-6 md:h-7 px-2 text-[8px] md:text-[9px] uppercase font-bold italic">Finalize</Button>}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
