@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Sparkles, Smartphone, CreditCard } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, Smartphone, CreditCard, Info } from 'lucide-react';
 import { aiAssistedJobApplication } from '@/ai/flows/ai-assisted-job-application';
 
 const STEPS = ['Personal Details', 'Qualifications', 'Payment', 'Review'];
@@ -32,7 +32,7 @@ export function ApplicationForm() {
     jobRole: initialJob,
     education: '',
     qualifications: '',
-    mpesaCode: '',
+    mpesaMessage: '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -77,10 +77,18 @@ export function ApplicationForm() {
               <CheckCircle2 className="h-12 w-12 text-green-600" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold font-headline text-primary">Application Submitted!</h2>
+          <h2 className="text-3xl font-bold font-headline text-primary">Application Received</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Thank you {formData.name}. Your application for {formData.jobRole || 'Canada Jobs'} has been received. Our team will verify your payment of Ksh 950 (M-Pesa Code: {formData.mpesaCode}) and contact you via {formData.phone} for the next steps.
+            Thank you {formData.name}. Your application for {formData.jobRole || 'Canada Jobs'} is currently being reviewed. 
           </p>
+          <div className="bg-muted p-4 rounded-lg text-sm text-left">
+            <p className="font-bold mb-2">Next Steps:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Our agents will verify your M-Pesa message.</li>
+              <li>You will receive a confirmation SMS within 2 hours.</li>
+              <li>A scheduled interview call will follow via {formData.phone}.</li>
+            </ol>
+          </div>
           <div className="pt-4">
             <Button onClick={() => window.location.href = '/'} className="bg-primary">Return Home</Button>
           </div>
@@ -91,7 +99,6 @@ export function ApplicationForm() {
 
   return (
     <div className="space-y-6">
-      {/* Progress Bar */}
       <div className="flex justify-between items-center mb-8 px-2">
         {STEPS.map((s, i) => (
           <div key={s} className="flex flex-col items-center gap-2">
@@ -113,19 +120,19 @@ export function ApplicationForm() {
                   <Input id="name" value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="As shown on ID" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (254...)</Label>
-                  <Input id="phone" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="e.g., 254704118070" required />
+                  <Label htmlFor="phone">Phone Number (M-Pesa Number)</Label>
+                  <Input id="phone" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="e.g., 2547XXXXXXXX" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input id="email" type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} placeholder="example@mail.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="idNumber">ID Number</Label>
+                  <Label htmlFor="idNumber">National ID / Passport Number</Label>
                   <Input id="idNumber" value={formData.idNumber} onChange={e => handleChange('idNumber', e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="county">County</Label>
+                  <Label htmlFor="county">County of Residence</Label>
                   <Input id="county" value={formData.county} onChange={e => handleChange('county', e.target.value)} placeholder="e.g., Nairobi" required />
                 </div>
                 <div className="space-y-2">
@@ -167,14 +174,14 @@ export function ApplicationForm() {
                       className="text-primary gap-2"
                     >
                       {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      AI Guidance
+                      AI Counselor
                     </Button>
                   </div>
                   <Textarea 
                     id="qualifications" 
                     value={formData.qualifications} 
                     onChange={e => handleChange('qualifications', e.target.value)} 
-                    placeholder="Briefly describe your work history and why you are qualified..." 
+                    placeholder="Describe your work history and any relevant skills..." 
                     className="min-h-[150px]"
                     required
                   />
@@ -185,7 +192,7 @@ export function ApplicationForm() {
                         AI Counselor Suggestions
                       </div>
                       <div className="text-sm space-y-2">
-                        <p className="font-medium">Recommended Roles based on your skills:</p>
+                        <p className="font-medium">Recommended Roles:</p>
                         <div className="flex flex-wrap gap-2">
                           {aiSuggestions.recommendedJobs.map(job => (
                             <Button key={job} variant="secondary" size="sm" onClick={() => handleChange('jobRole', job)} className="h-7 text-[10px]">
@@ -193,7 +200,7 @@ export function ApplicationForm() {
                             </Button>
                           ))}
                         </div>
-                        <p className="font-medium pt-2">Tailored Application Statement:</p>
+                        <p className="font-medium pt-2">Tailored Statement:</p>
                         <p className="italic text-muted-foreground bg-white p-3 rounded border text-xs">
                           {aiSuggestions.tailoredStatement}
                         </p>
@@ -204,7 +211,7 @@ export function ApplicationForm() {
                           className="w-full text-xs"
                           onClick={() => handleChange('qualifications', formData.qualifications + '\n\n' + aiSuggestions.tailoredStatement)}
                         >
-                          Add AI Statement to Qualifications
+                          Use this Statement
                         </Button>
                       </div>
                     </div>
@@ -214,43 +221,62 @@ export function ApplicationForm() {
             )}
 
             {step === 2 && (
-              <div className="space-y-8 py-4">
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 flex gap-4">
-                  <div className="h-12 w-12 rounded-full bg-accent flex items-center justify-center shrink-0">
-                    <CreditCard className="text-white" />
+              <div className="space-y-6 py-2">
+                <div className="bg-red-50 border border-red-100 rounded-xl p-6 flex gap-4">
+                  <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <Info className="text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-primary mb-1">Payment Step (Ksh 950)</h3>
-                    <p className="text-sm text-muted-foreground">Registration fee is mandatory and fully refundable if not selected.</p>
+                    <h3 className="font-bold text-primary mb-1">Registration Fee (Ksh 950)</h3>
+                    <p className="text-sm text-muted-foreground">
+                      This fee covers application processing, document vetting, and initial assessment. It is 100% refundable if you are not selected for an interview.
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-white border rounded-xl p-6 space-y-4 shadow-sm">
-                    <div className="flex items-center gap-2 font-bold text-primary">
+                  <div className="bg-white border-2 border-accent rounded-xl p-6 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-2 font-bold text-accent">
                       <Smartphone className="h-5 w-5" />
                       M-Pesa Payment Procedure
                     </div>
-                    <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                      <li>Go to <strong>M-Pesa Menu</strong></li>
-                      <li>Select <strong>Lipa na M-PESA</strong></li>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground">Till Number:</p>
+                        <p className="text-2xl font-bold text-primary">937226</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground">Till Name:</p>
+                        <p className="text-lg font-bold">RECRUITMENT SERVICES</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground">Amount:</p>
+                        <p className="text-lg font-bold">Ksh 950</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
+                      <li>Go to <strong>M-Pesa</strong> &gt; <strong>Lipa na M-PESA</strong></li>
                       <li>Select <strong>Buy Goods and Services</strong></li>
-                      <li>Enter Till No: <strong className="text-primary text-lg">937226</strong></li>
-                      <li>Enter Amount: <strong>Ksh 950</strong></li>
-                      <li>Enter PIN and Complete</li>
+                      <li>Enter Till No: <strong>937226</strong></li>
+                      <li>Enter Amount: <strong>950</strong></li>
+                      <li>Complete the transaction with your PIN</li>
                     </ol>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mpesaCode">Enter M-Pesa Transaction Code</Label>
-                    <Input 
-                      id="mpesaCode" 
-                      value={formData.mpesaCode} 
-                      onChange={e => handleChange('mpesaCode', e.target.value.toUpperCase())} 
-                      placeholder="e.g. QXA12BC34" 
-                      className="text-lg font-mono tracking-widest h-12"
+                  <div className="space-y-3">
+                    <Label htmlFor="mpesaMessage" className="text-primary font-bold">Paste Complete M-Pesa Message</Label>
+                    <Textarea 
+                      id="mpesaMessage" 
+                      value={formData.mpesaMessage} 
+                      onChange={e => handleChange('mpesaMessage', e.target.value)} 
+                      placeholder="Paste the entire confirmation message here (e.g., QXA12BC34 Confirmed. Ksh950.00 paid to RECRUITMENT SERVICES...)" 
+                      className="min-h-[120px] font-mono text-sm"
                       required 
                     />
+                    <p className="text-[10px] text-muted-foreground">
+                      * Ensure the message includes the transaction code, amount, and date.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -258,39 +284,34 @@ export function ApplicationForm() {
 
             {step === 3 && (
               <div className="space-y-6">
-                <h3 className="font-headline text-xl font-bold text-primary border-b pb-2">Review Your Application</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <h3 className="font-headline text-xl font-bold text-primary border-b pb-2">Final Review</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-muted-foreground">Name</p>
-                      <p className="font-medium">{formData.name}</p>
+                      <p className="text-muted-foreground text-xs uppercase font-bold">Full Name</p>
+                      <p className="font-medium text-lg">{formData.name}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">ID Number</p>
-                      <p className="font-medium">{formData.idNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Phone</p>
+                      <p className="text-muted-foreground text-xs uppercase font-bold">Contact</p>
                       <p className="font-medium">{formData.phone}</p>
+                      <p className="font-medium">{formData.email}</p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-muted-foreground">Target Role</p>
-                      <p className="font-medium">{formData.jobRole}</p>
+                      <p className="text-muted-foreground text-xs uppercase font-bold">Applied For</p>
+                      <p className="font-medium text-lg text-accent">{formData.jobRole}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Location</p>
-                      <p className="font-medium">{formData.county}, {formData.ward}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">M-Pesa Code</p>
-                      <p className="font-medium text-accent font-mono">{formData.mpesaCode}</p>
+                      <p className="text-muted-foreground text-xs uppercase font-bold">M-Pesa Verification</p>
+                      <div className="bg-muted p-2 rounded mt-1 overflow-hidden">
+                        <p className="font-mono text-[10px] break-words">{formData.mpesaMessage || 'Message not provided'}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="pt-4 p-4 bg-muted rounded-lg text-xs text-muted-foreground italic">
-                  By clicking "Submit Application", you agree to our privacy policy and confirm that the information provided is true and accurate.
+                <div className="pt-4 p-4 bg-primary/5 rounded-lg text-xs text-muted-foreground italic border border-primary/10">
+                  By submitting, you authorize Canada Pathway Jobs to process your data for recruitment purposes. Incomplete applications or unverified payments will not be processed.
                 </div>
               </div>
             )}
@@ -308,7 +329,7 @@ export function ApplicationForm() {
                   </Button>
                 ) : (
                   <Button type="submit" className="bg-accent hover:bg-accent/90 px-12 h-12 text-lg font-bold" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Submit Application'}
+                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Confirm & Submit'}
                   </Button>
                 )}
               </div>
@@ -319,3 +340,5 @@ export function ApplicationForm() {
     </div>
   );
 }
+
+const Separator = () => <div className="h-px bg-muted w-full my-2" />;
