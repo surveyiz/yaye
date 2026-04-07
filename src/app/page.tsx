@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full py-12 lg:py-24 overflow-hidden bg-accent text-white">
+      <section className="relative w-full py-12 lg:py-24 overflow-hidden bg-accent text-white border-b-8 border-primary">
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
@@ -31,7 +31,7 @@ export default function Home() {
                 Work in Canada <br/> <span className="text-primary italic">Fully Sponsored</span>
               </h1>
               <p className="text-xl text-blue-100 max-w-xl">
-                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers. Explore categories and find your fit.
+                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/jobs" className="w-full sm:w-auto">
@@ -40,8 +40,8 @@ export default function Home() {
                   </Button>
                 </Link>
                 <Link href="/procedure" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full h-14 text-lg font-bold uppercase border-white text-white hover:bg-white hover:text-accent">
-                    View Recruitment Process
+                  <Button size="lg" variant="secondary" className="w-full h-14 text-lg font-bold uppercase shadow-lg">
+                    View Process
                   </Button>
                 </Link>
               </div>
@@ -57,15 +57,16 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative h-[500px] rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20">
-              {heroImage?.imageUrl ? (
+              {heroImage && (
                 <Image 
                   src={heroImage.imageUrl} 
-                  alt={heroImage.description || 'Canada Landscape'}
+                  alt={heroImage.description}
                   fill
                   className="object-cover"
                   priority
+                  data-ai-hint={heroImage.imageHint}
                 />
-              ) : null}
+              )}
             </div>
           </div>
         </div>

@@ -1,9 +1,10 @@
+
 {
   "placeholderImages": [
     {
       "id": "hero-canada",
-      "description": "Canada Landscape",
-      "imageUrl": "https://picsum.photos/seed/canada1/1200/600",
+      "description": "Canada Landscape at Dawn",
+      "imageUrl": "https://picsum.photos/seed/canada_hero/1200/600",
       "imageHint": "Canada landscape"
     },
     {
