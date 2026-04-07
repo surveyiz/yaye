@@ -15,11 +15,11 @@ export default function Home() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Globe className="h-10 w-10 text-primary animate-pulse" />
                 <div className="flex flex-col">
                   <span className="font-headline text-2xl font-bold tracking-tighter leading-none">JOBS</span>
-                  <span className="text-xs tracking-[0.3em] font-bold text-primary">IN CANADA</span>
+                  <span className="text-[10px] tracking-[0.3em] font-bold text-primary">IN CANADA</span>
                 </div>
               </div>
               <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium backdrop-blur-sm">
@@ -30,17 +30,17 @@ export default function Home() {
                 Work in Canada <br/> <span className="text-primary">Fully Sponsored</span>
               </h1>
               <p className="text-xl text-blue-100 max-w-xl">
-                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers. Apply today for a guaranteed pathway.
+                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers. Explore categories and find your fit.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/apply" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-white px-8 h-14 text-lg font-bold uppercase italic">
-                    Start Application <ArrowRight className="ml-2 h-5 w-5" />
+                <Link href="/jobs" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-white px-8 h-14 text-lg font-bold uppercase italic shadow-lg">
+                    Browse Available Jobs <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/jobs" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full border-white/30 text-white hover:bg-white/10 h-14 text-lg font-bold">
-                    View Job Roles
+                <Link href="/procedure" className="w-full sm:w-auto">
+                  <Button size="lg" variant="secondary" className="w-full h-14 text-lg font-bold uppercase">
+                    View Recruitment Process
                   </Button>
                 </Link>
               </div>
@@ -55,14 +55,14 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="hidden lg:block relative h-[500px] rounded-2xl overflow-hidden shadow-2xl border-4 border-primary">
+            <div className="hidden lg:block relative h-[500px] rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20">
               {heroImage?.imageUrl ? (
                 <Image 
                   src={heroImage.imageUrl} 
                   alt={heroImage.description || 'Canada Landscape'}
                   fill
                   className="object-cover"
-                  data-ai-hint="canada landscape"
+                  priority
                 />
               ) : null}
             </div>
@@ -129,9 +129,9 @@ export default function Home() {
                 Deadline: 7th April 2026. Interviews are ongoing.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link href="/apply">
+                <Link href="/jobs">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-10 h-14 font-bold uppercase">
-                    Apply Online Today
+                    Find Your Job Category
                   </Button>
                 </Link>
               </div>
