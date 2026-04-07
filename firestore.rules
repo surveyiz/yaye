@@ -6,7 +6,7 @@ service cloud.firestore {
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
 
-    match /users/{userId}/applicant_profile {
+    match /users/{userId}/profile/details {
       allow get: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId);
     }

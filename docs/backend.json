@@ -47,7 +47,7 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/applicant_profile",
+        "path": "/users/{userId}/profile/details",
         "definition": {
           "entityName": "Applicant",
           "description": "User's core profile data."

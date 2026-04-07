@@ -9,12 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Sparkles, Smartphone, Info, AlertCircle, ShieldCheck } from 'lucide-react';
-import { aiAssistedJobApplication } from '@/ai/flows/ai-assisted-job-application';
+import { CheckCircle2, Loader2, Smartphone, Info, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 const STEPS = ['Personal Details', 'Qualifications', 'Payment', 'Review'];
@@ -29,8 +28,6 @@ export function ApplicationForm() {
 
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
-  const [aiLoading, setAiLoading] = React.useState(false);
-  const [aiSuggestions, setAiSuggestions] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const [formData, setFormData] = React.useState({
@@ -65,7 +62,12 @@ export function ApplicationForm() {
     } else if (step === 2) {
       const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
       if (!match) {
-        setError("Invalid M-Pesa format. Paste the complete confirmation message.");
+        setError("Invalid M-Pesa format. Please paste the COMPLETE Safaricom confirmation message showing payment to RECRUITMENT SERVICES.");
+        return false;
+      }
+      const paidAmount = match[2].replace(/,/g, '');
+      if (parseFloat(paidAmount) < 950) {
+        setError("The transaction amount is incorrect. The registration fee is Ksh 950.");
         return false;
       }
     }
@@ -91,7 +93,9 @@ export function ApplicationForm() {
       }
 
       const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
-      const transactionCode = match![1].toUpperCase();
+      if (!match) throw new Error("Invalid M-Pesa message format.");
+
+      const transactionCode = match[1].toUpperCase();
       const applicantId = currentUser.uid;
       const applicationId = crypto.randomUUID();
 
@@ -104,7 +108,13 @@ export function ApplicationForm() {
         mpesaCode950: transactionCode
       };
 
-      await setDoc(doc(firestore, 'users', applicantId, 'applicant_profile'), {
+      // Corrected paths to ensure even number of segments for doc()
+      // Profile path: users/{uid}/profile/details (4 segments)
+      const profileRef = doc(firestore, 'users', applicantId, 'profile', 'details');
+      const userAppRef = doc(firestore, 'users', applicantId, 'applications', applicationId);
+      const globalAppRef = doc(firestore, 'global_applications', applicationId);
+
+      await setDoc(profileRef, {
         id: applicantId,
         fullName: formData.name,
         phoneNumber: formData.phone,
@@ -116,12 +126,18 @@ export function ApplicationForm() {
         registrationDate: new Date().toISOString()
       });
 
-      await setDoc(doc(firestore, 'users', applicantId, 'applications', applicationId), appData);
-      await setDoc(doc(firestore, 'global_applications', applicationId), appData);
+      await setDoc(userAppRef, appData);
+      await setDoc(globalAppRef, appData);
+
+      toast({
+        title: "Application Submitted",
+        description: "Your registration is being verified. Check your status shortly.",
+      });
 
       router.push('/status');
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+      toast({ variant: "destructive", title: "Submission Error", description: err.message });
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -146,33 +162,34 @@ export function ApplicationForm() {
         <CardContent className="p-8">
           {step === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2"><Label>Full Name</Label><Input value={formData.name} onChange={e => handleChange('name', e.target.value)} /></div>
-              <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={e => handleChange('phone', e.target.value)} /></div>
-              <div className="space-y-2"><Label>Email</Label><Input value={formData.email} onChange={e => handleChange('email', e.target.value)} /></div>
-              <div className="space-y-2"><Label>ID Number</Label><Input value={formData.idNumber} onChange={e => handleChange('idNumber', e.target.value)} /></div>
-              <div className="space-y-2"><Label>County</Label><Input value={formData.county} onChange={e => handleChange('county', e.target.value)} /></div>
-              <div className="space-y-2"><Label>Ward</Label><Input value={formData.ward} onChange={e => handleChange('ward', e.target.value)} /></div>
+              <div className="space-y-2"><Label>Full Name (As per ID)</Label><Input value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="Enter your full name" /></div>
+              <div className="space-y-2"><Label>Phone Number</Label><Input value={formData.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="0712..." /></div>
+              <div className="space-y-2"><Label>Email Address</Label><Input type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} placeholder="email@example.com" /></div>
+              <div className="space-y-2"><Label>National ID Number</Label><Input value={formData.idNumber} onChange={e => handleChange('idNumber', e.target.value)} placeholder="Enter ID number" /></div>
+              <div className="space-y-2"><Label>County of Residence</Label><Input value={formData.county} onChange={e => handleChange('county', e.target.value)} placeholder="e.g. Nairobi" /></div>
+              <div className="space-y-2"><Label>Ward / Location</Label><Input value={formData.ward} onChange={e => handleChange('ward', e.target.value)} placeholder="Enter ward" /></div>
             </div>
           )}
 
           {step === 1 && (
             <div className="space-y-6">
-              <div className="space-y-2"><Label>Target Role</Label><Input value={formData.jobRole} onChange={e => handleChange('jobRole', e.target.value)} /></div>
+              <div className="space-y-2"><Label>Target Job Role</Label><Input value={formData.jobRole} onChange={e => handleChange('jobRole', e.target.value)} /></div>
               <div className="space-y-2">
-                <Label>Education Level</Label>
+                <Label>Highest Education Level</Label>
                 <Select value={formData.education} onValueChange={v => handleChange('education', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select qualification" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="primary">Primary</SelectItem>
-                    <SelectItem value="secondary">Secondary</SelectItem>
-                    <SelectItem value="college">College</SelectItem>
-                    <SelectItem value="university">University</SelectItem>
+                    <SelectItem value="primary">Primary School</SelectItem>
+                    <SelectItem value="secondary">Secondary School (KCSE)</SelectItem>
+                    <SelectItem value="college">College / Diploma</SelectItem>
+                    <SelectItem value="university">University Degree</SelectItem>
+                    <SelectItem value="postgrad">Post Graduate</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Experience & Skills</Label>
-                <Textarea value={formData.qualifications} onChange={e => handleChange('qualifications', e.target.value)} className="min-h-[120px]" />
+                <Label>Summary of Experience & Skills</Label>
+                <Textarea value={formData.qualifications} onChange={e => handleChange('qualifications', e.target.value)} placeholder="Briefly describe your background..." className="min-h-[120px]" />
               </div>
             </div>
           )}
@@ -180,32 +197,45 @@ export function ApplicationForm() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="bg-accent rounded-2xl p-6 text-white space-y-4">
-                <div className="flex items-center gap-3"><ShieldCheck className="h-6 w-6 text-primary" /><h3 className="font-bold uppercase tracking-tight">Ksh 950 Fee (Processing & Vetting)</h3></div>
-                <p className="text-xs text-blue-100 italic leading-relaxed">This fee is mandatory for background verification and initial screening. It ensures only committed applicants are prioritized.</p>
+                <div className="flex items-center gap-3"><ShieldCheck className="h-6 w-6 text-primary" /><h3 className="font-bold uppercase tracking-tight">Ksh 950 Registration Fee</h3></div>
+                <p className="text-xs text-blue-100 italic leading-relaxed">This mandatory fee covers the initial background vetting and document verification process. Ensure the transaction is complete before pasting the message.</p>
               </div>
               <div className="bg-white border-2 border-primary rounded-2xl p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="space-y-1"><p className="text-[10px] uppercase font-bold text-muted-foreground">Till Number</p><p className="text-3xl font-black text-accent">937226</p></div>
                   <div className="space-y-1"><p className="text-[10px] uppercase font-bold text-muted-foreground">Merchant</p><p className="text-sm font-bold text-primary uppercase">RECRUITMENT SERVICES</p></div>
                 </div>
-                <Textarea 
-                  value={formData.mpesaMessage} 
-                  onChange={e => handleChange('mpesaMessage', e.target.value)} 
-                  placeholder="Paste FULL Safaricom message here..." 
-                  className="min-h-[120px] font-mono text-xs"
-                />
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-black text-slate-500">Paste Full M-Pesa Message</Label>
+                  <Textarea 
+                    value={formData.mpesaMessage} 
+                    onChange={e => handleChange('mpesaMessage', e.target.value)} 
+                    placeholder="Paste the COMPLETE confirmation message from Safaricom here..." 
+                    className="min-h-[140px] font-mono text-xs uppercase"
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {step === 3 && (
             <div className="space-y-6">
-              <h3 className="font-headline text-xl font-bold text-accent border-b pb-2 uppercase italic">Review Details</h3>
+              <h3 className="font-headline text-xl font-bold text-accent border-b pb-2 uppercase italic">Review Application</h3>
               <div className="grid grid-cols-2 gap-8 text-sm">
-                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">Name</p><p className="font-bold">{formData.name}</p></div>
-                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">Position</p><p className="font-bold text-primary">{formData.jobRole}</p></div>
+                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">Applicant Name</p><p className="font-bold">{formData.name}</p></div>
+                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">Target Position</p><p className="font-bold text-primary uppercase">{formData.jobRole}</p></div>
+                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">M-Pesa Code</p><p className="font-bold text-accent">{formData.mpesaMessage.match(MPESA_MESSAGE_REGEX)?.[1] || 'N/A'}</p></div>
+                <div><p className="text-muted-foreground text-[10px] uppercase font-black mb-1">County</p><p className="font-bold">{formData.county}</p></div>
               </div>
-              <Alert className="bg-primary/5 border-primary/20"><ShieldCheck className="h-4 w-4 text-primary" /><AlertDescription className="text-[11px] font-medium italic">By confirming, you certify that all ID and payment details are accurate. False information leads to disqualification.</AlertDescription></Alert>
+              <Alert className="bg-primary/5 border-primary/20">
+                <div className="flex gap-3">
+                  <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-[11px] font-medium italic leading-tight">
+                    By clicking confirm, I certify that all information provided is accurate and my M-Pesa transaction is valid. 
+                    I understand that providing false details will lead to immediate disqualification.
+                  </p>
+                </div>
+              </Alert>
             </div>
           )}
 
@@ -216,13 +246,22 @@ export function ApplicationForm() {
                 <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 px-10 font-bold uppercase italic h-12">Next Step</Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={loading} className="bg-accent hover:bg-accent/90 px-12 font-bold uppercase italic h-14">
-                  {loading ? <Loader2 className="animate-spin" /> : 'Confirm Submission'}
+                  {loading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                  {loading ? 'Submitting...' : 'Confirm Submission'}
                 </Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+      
+      <div className="flex gap-3 items-start p-4 bg-white/50 rounded-2xl text-[10px] text-slate-500 border border-slate-200">
+        <Info className="h-4 w-4 shrink-0 text-blue-500" />
+        <p>
+          Need assistance? Our help desk is available 24/7 at +254 783 334 670. 
+          Your data is processed securely under the Data Protection Act of Kenya and International Labour Laws.
+        </p>
+      </div>
     </div>
   );
 }
