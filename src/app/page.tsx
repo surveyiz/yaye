@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ export default function Home() {
                 2025 Kenyan Intake is Live
               </div>
               <h1 className="font-headline text-4xl md:text-6xl font-bold leading-tight uppercase">
-                Work in Canada <br/> <span className="text-primary">Fully Sponsored</span>
+                Work in Canada <br/> <span className="text-primary italic">Fully Sponsored</span>
               </h1>
               <p className="text-xl text-blue-100 max-w-xl">
                 The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers. Explore categories and find your fit.
@@ -39,7 +40,7 @@ export default function Home() {
                   </Button>
                 </Link>
                 <Link href="/procedure" className="w-full sm:w-auto">
-                  <Button size="lg" variant="secondary" className="w-full h-14 text-lg font-bold uppercase">
+                  <Button size="lg" variant="outline" className="w-full h-14 text-lg font-bold uppercase border-white text-white hover:bg-white hover:text-accent">
                     View Recruitment Process
                   </Button>
                 </Link>
@@ -130,7 +131,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link href="/jobs">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-10 h-14 font-bold uppercase">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-10 h-14 font-bold uppercase shadow-xl">
                     Find Your Job Category
                   </Button>
                 </Link>

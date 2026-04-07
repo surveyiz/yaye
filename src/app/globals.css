@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,11 +24,11 @@
     --secondary: 210 100% 20%;
     --secondary-foreground: 0 0% 100%;
     
-    /* Muted: #99B3CC (Teal 200) */
-    --muted: 210 33% 70%;
+    /* Muted: #EFF1F7 (Cool Grey) */
+    --muted: 226 33% 95%;
     --muted-foreground: 210 100% 10%;
     
-    /* Accent: #001A33 (Pitch Dark Blue) */
+    /* Accent: #001A33 (Pitch Dark Blue / Navy) */
     --accent: 210 100% 10%;
     --accent-foreground: 0 0% 100%;
     
@@ -38,7 +39,7 @@
     --input: 210 100% 10%;
     --ring: 0 100% 50%;
     
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 
   .dark {

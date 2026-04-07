@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Plane, FileText, Phone, Award, ShieldCheck, Smartphone, Info } from 'lucide-react';
@@ -8,7 +9,7 @@ const steps = [
   { 
     step: 1, 
     title: "Browse & Select Role", 
-    description: "Visit our job listings to find a category that matches your skills. We have over 80+ sectors recruiting." 
+    description: "Visit our job listings to find a category that matches your skills. We have over 80+ sectors recruiting Kenyans." 
   },
   { 
     step: 2, 
@@ -18,12 +19,12 @@ const steps = [
   { 
     step: 3, 
     title: "Registration Payment", 
-    description: "Pay the mandatory Ksh 950 processing fee to Till Number 937226 (RECRUITMENT SERVICES). This covers document vetting." 
+    description: "Pay the mandatory Ksh 950 processing fee to Till Number 937226 (RECRUITMENT SERVICES). This fee covers application vetting and document verification." 
   },
   { 
     step: 4, 
     title: "Verify M-Pesa Message", 
-    description: "Copy and paste the ENTIRE confirmation message from Safaricom into the application form for instant verification." 
+    description: "Copy and paste the ENTIRE confirmation message from Safaricom into the application form. Verification requires the full message including transaction code, amount, and merchant name." 
   },
   { 
     step: 5, 
@@ -101,7 +102,7 @@ export default function ProcedurePage() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Merchant Name</p>
-                        <p className="font-bold text-accent">RECRUITMENT SERVICES</p>
+                        <p className="font-bold text-accent uppercase">RECRUITMENT SERVICES</p>
                       </div>
                     </div>
 
@@ -112,7 +113,7 @@ export default function ProcedurePage() {
 
                     <div className="flex gap-3 bg-blue-50 p-3 rounded-lg text-xs text-blue-800 leading-tight">
                       <Info className="h-4 w-4 shrink-0" />
-                      <p>Ensure you paste the <strong>FULL</strong> confirmation message. Verification fails if code is missing.</p>
+                      <p>Ensure you paste the <strong>FULL</strong> confirmation message. Verification fails if the Safaricom message is altered or incomplete.</p>
                     </div>
                   </div>
 
@@ -126,11 +127,11 @@ export default function ProcedurePage() {
                 </CardContent>
               </Card>
 
-              <div className="p-6 bg-accent rounded-2xl text-white space-y-4">
+              <div className="p-6 bg-accent rounded-2xl text-white space-y-4 shadow-xl">
                 <h4 className="font-bold uppercase text-sm text-primary">Need Help?</h4>
-                <p className="text-xs text-blue-100">Our support agents are available 24/7 to assist with your M-Pesa verification.</p>
+                <p className="text-xs text-blue-100">Our support agents are available 24/7 to assist with your M-Pesa verification and application queries.</p>
                 <div className="flex items-center gap-2 text-sm font-bold">
-                  <Phone className="h-4 w-4" />
+                  <Phone className="h-4 w-4 text-primary" />
                   <span>+254 783 334 670</span>
                 </div>
               </div>
