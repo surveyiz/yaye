@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Smartphone, Info, AlertCircle, ShieldCheck } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { CheckCircle2, Loader2, Smartphone, Info, AlertCircle, ShieldCheck, UserCircle } from 'lucide-react';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,6 +25,14 @@ export function ApplicationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialJob = searchParams.get('job') || '';
+
+  // Fetch existing profile to avoid re-entering details
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid, 'profile', 'details');
+  }, [firestore, user]);
+
+  const { data: profileData, isLoading: isProfileLoading } = useDoc(profileRef);
 
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
@@ -42,6 +50,24 @@ export function ApplicationForm() {
     qualifications: '',
     mpesaMessage: '',
   });
+
+  // Sync profile data to form if it exists
+  React.useEffect(() => {
+    if (profileData) {
+      setFormData(prev => ({
+        ...prev,
+        name: profileData.fullName || '',
+        phone: profileData.phoneNumber || '',
+        email: profileData.email || '',
+        idNumber: profileData.nationalIdNumber || '',
+        county: profileData.county || '',
+        ward: profileData.ward || '',
+        education: profileData.highestEducationQualification || prev.education,
+      }));
+      // If profile exists, skip the personal details step
+      if (step === 0) setStep(1);
+    }
+  }, [profileData]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -108,12 +134,11 @@ export function ApplicationForm() {
         mpesaCode950: transactionCode
       };
 
-      // Corrected paths to ensure even number of segments for doc()
-      // Profile path: users/{uid}/profile/details (4 segments)
       const profileRef = doc(firestore, 'users', applicantId, 'profile', 'details');
       const userAppRef = doc(firestore, 'users', applicantId, 'applications', applicationId);
       const globalAppRef = doc(firestore, 'global_applications', applicationId);
 
+      // Always update profile with latest info
       await setDoc(profileRef, {
         id: applicantId,
         fullName: formData.name,
@@ -123,15 +148,15 @@ export function ApplicationForm() {
         county: formData.county,
         ward: formData.ward,
         highestEducationQualification: formData.education,
-        registrationDate: new Date().toISOString()
-      });
+        registrationDate: profileData?.registrationDate || new Date().toISOString()
+      }, { merge: true });
 
       await setDoc(userAppRef, appData);
       await setDoc(globalAppRef, appData);
 
       toast({
         title: "Application Submitted",
-        description: "Your registration is being verified. Check your status shortly.",
+        description: `Your application for ${formData.jobRole} is being verified.`,
       });
 
       router.push('/status');
@@ -142,6 +167,15 @@ export function ApplicationForm() {
       setLoading(false);
     }
   };
+
+  if (isProfileLoading) {
+    return (
+      <Card className="border-none shadow-xl p-12 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground italic">Checking your profile...</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -155,6 +189,15 @@ export function ApplicationForm() {
           </div>
         ))}
       </div>
+
+      {profileData && (
+        <Alert className="bg-green-50 border-green-200">
+          <UserCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800 text-xs font-medium">
+            Welcome back, <strong>{profileData.fullName}</strong>. Your profile details have been pre-filled.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
@@ -198,7 +241,7 @@ export function ApplicationForm() {
             <div className="space-y-6">
               <div className="bg-accent rounded-2xl p-6 text-white space-y-4">
                 <div className="flex items-center gap-3"><ShieldCheck className="h-6 w-6 text-primary" /><h3 className="font-bold uppercase tracking-tight">Ksh 950 Registration Fee</h3></div>
-                <p className="text-xs text-blue-100 italic leading-relaxed">This mandatory fee covers the initial background vetting and document verification process. Ensure the transaction is complete before pasting the message.</p>
+                <p className="text-xs text-blue-100 italic leading-relaxed">This mandatory fee covers the initial background vetting and document verification process for this specific application. Ensure the transaction is complete before pasting the message.</p>
               </div>
               <div className="bg-white border-2 border-primary rounded-2xl p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-center">
@@ -240,7 +283,14 @@ export function ApplicationForm() {
           )}
 
           <div className="flex justify-between items-center mt-12 pt-6 border-t">
-            {step > 0 && <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>}
+            {step > 0 && (
+              <Button 
+                variant="ghost" 
+                onClick={() => setStep(prev => (prev === 1 && profileData ? 0 : prev - 1))}
+              >
+                Back
+              </Button>
+            )}
             <div className="ml-auto">
               {step < 3 ? (
                 <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 px-10 font-bold uppercase italic h-12">Next Step</Button>
