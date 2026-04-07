@@ -24,13 +24,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+const SUPER_ADMIN_EMAIL = 'aicystevens0@gmail.com';
+
 export default function AdminDashboard() {
   const { auth, firestore, user, isUserLoading } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
-  const [email, setEmail] = React.useState('aicystevens0@gmail.com');
+  const [email, setEmail] = React.useState(SUPER_ADMIN_EMAIL);
   const [password, setPassword] = React.useState('Kipngetich.91!@');
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [isRegistering, setIsRegistering] = React.useState(false);
@@ -86,10 +88,14 @@ export default function AdminDashboard() {
 
   const handleBootstrapAdmin = async () => {
     if (!firestore || !user) return;
+    if (user.email !== SUPER_ADMIN_EMAIL) {
+      toast({ variant: "destructive", title: "Denied", description: "Unauthorized email." });
+      return;
+    }
     setIsBootstrapping(true);
     try {
       await setDoc(doc(firestore, 'admins', user.uid), {
-        email: user.email || 'anonymous',
+        email: user.email,
         role: 'super_admin',
         grantedAt: new Date().toISOString()
       });
@@ -108,7 +114,11 @@ export default function AdminDashboard() {
 
   if (isUserLoading || isAdminLoading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>;
 
-  if (!user || (!adminData && user.email !== 'aicystevens0@gmail.com') || (appsError && appsError.name === 'FirebaseError')) {
+  // Show auth/bootstrap if not logged in OR not an admin (and not the super admin by email waiting to bootstrap)
+  const isAuthorizedEmail = user?.email === SUPER_ADMIN_EMAIL;
+  const isVerifiedAdmin = !!adminData;
+
+  if (!user || (!isVerifiedAdmin && !isAuthorizedEmail)) {
     return (
       <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-6 md:p-10 text-center space-y-6 shadow-2xl border-none rounded-3xl">
@@ -128,10 +138,32 @@ export default function AdminDashboard() {
             </form>
           ) : (
             <div className="space-y-4">
-              <Button onClick={handleBootstrapAdmin} disabled={isBootstrapping} className="w-full h-12 font-bold uppercase italic"><ShieldCheck className="mr-2 h-5 w-5" /> Grant Admin Access</Button>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-[10px] font-bold">UNAUTHORIZED ACCOUNT</AlertDescription>
+              </Alert>
+              <p className="text-[10px] text-muted-foreground">This page is restricted to authorized recruitment officers.</p>
               <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground"><LogOut className="mr-2 h-4 w-4" /> Sign Out</Button>
             </div>
           )}
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle bootstrap for the super admin
+  if (isAuthorizedEmail && !isVerifiedAdmin) {
+    return (
+      <div className="bg-[#EFF1F7] min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 text-center space-y-6 shadow-2xl border-none rounded-3xl">
+          <ShieldCheck className="h-16 w-16 text-primary mx-auto" />
+          <h2 className="text-2xl font-black text-accent uppercase italic">Initialize System</h2>
+          <p className="text-sm text-muted-foreground">Authorized Super Admin detected. Click below to initialize your dashboard access.</p>
+          <Button onClick={handleBootstrapAdmin} disabled={isBootstrapping} className="w-full h-14 bg-primary font-bold uppercase italic shadow-xl">
+            {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+            Unlock Command Center
+          </Button>
+          <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground">Sign Out</Button>
         </Card>
       </div>
     );

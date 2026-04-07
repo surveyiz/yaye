@@ -33,7 +33,8 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow get: if isSignedIn();
-      allow create: if isOwner(adminId) || isSuperAdmin();
+      // Only the Super Admin email can create new admin records
+      allow create: if isSuperAdmin();
     }
   }
 }
