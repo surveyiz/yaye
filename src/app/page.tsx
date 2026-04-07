@@ -56,7 +56,7 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden lg:block relative h-[500px] rounded-2xl overflow-hidden shadow-2xl border-4 border-primary">
-              {heroImage?.imageUrl && (
+              {heroImage?.imageUrl ? (
                 <Image 
                   src={heroImage.imageUrl} 
                   alt={heroImage.description || 'Canada Landscape'}
@@ -64,7 +64,7 @@ export default function Home() {
                   className="object-cover"
                   data-ai-hint="canada landscape"
                 />
-              )}
+              ) : null}
             </div>
           </div>
         </div>
