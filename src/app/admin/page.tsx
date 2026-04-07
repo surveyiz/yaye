@@ -24,7 +24,8 @@ export default function AdminDashboard() {
   const { data: applications, isLoading } = useCollection(appsQuery);
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
-    if (!firestore) return;
+    if (!firestore || !app?.id || !app?.applicantId) return;
+    
     const globalRef = doc(firestore, 'global_applications', app.id);
     const userRef = doc(firestore, 'users', app.applicantId, 'applications', app.id);
     

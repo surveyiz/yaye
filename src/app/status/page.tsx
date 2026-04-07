@@ -50,7 +50,7 @@ export default function StatusPage() {
   }
 
   const handleSimulateUpload = () => {
-    if (!firestore || !user || !eduDetails) return;
+    if (!firestore || !user || !eduDetails || !currentApp?.id) return;
     setUploading(true);
     
     const updateData = { 

@@ -28,7 +28,11 @@ function ECitizenContent() {
 
   const validateAndSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user || !appId) return;
+    // Defensive check for appId and other dependencies
+    if (!firestore || !user || !appId || appId === 'null' || appId === 'undefined') {
+      setError('Missing or invalid application reference. Please return to the status page.');
+      return;
+    }
     setError('');
 
     const match = mpesaMessage.match(ECITIZEN_MPESA_REGEX);
@@ -67,6 +71,7 @@ function ECitizenContent() {
         ecitizenPaymentDate: new Date().toISOString()
       };
 
+      // Ensure IDs are valid before constructing references
       const userRef = doc(firestore, 'users', user.uid, 'applications', appId);
       const globalRef = doc(firestore, 'global_applications', appId);
 
@@ -97,69 +102,78 @@ function ECitizenContent() {
           <span className="text-xs font-bold text-muted-foreground uppercase border-l pl-2 border-slate-300">Gateway</span>
         </div>
 
-        <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
-          <CardHeader className="bg-[#0051B4] text-white p-6">
-            <CardTitle className="text-center text-lg font-bold uppercase italic">Official Document Vetting</CardTitle>
-          </CardHeader>
-          <CardContent className="p-8 space-y-6">
-            <div className="space-y-2 text-center">
-              <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Mandatory Vetting Fee</p>
-              <h2 className="text-4xl font-black text-accent">Ksh 1,027.00</h2>
-            </div>
-
-            <div className="p-5 bg-blue-50 rounded-2xl border-2 border-blue-100 space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-[10px] uppercase font-black text-blue-600">Lipa na M-Pesa Till</p>
-                <Smartphone className="h-4 w-4 text-blue-400" />
-              </div>
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-4xl font-black text-blue-900">668526</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase font-black text-blue-600">Merchant Name</p>
-                  <p className="font-bold text-blue-900 text-xs">STATAREA SYSTEMS</p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={validateAndSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-slate-500">Paste Full Confirmation Message</Label>
-                <Textarea 
-                  placeholder="Paste the message from Safaricom here..." 
-                  value={mpesaMessage}
-                  onChange={(e) => setMpesaMessage(e.target.value)}
-                  className="min-h-[120px] font-mono text-xs uppercase border-2 focus:border-[#0051B4] bg-white"
-                />
+        {!appId || appId === 'null' || appId === 'undefined' ? (
+          <Card className="border-none shadow-xl p-8 text-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <h2 className="text-xl font-bold text-accent uppercase">Invalid Session</h2>
+            <p className="text-muted-foreground">We couldn't find your application ID. Please go back to your status page and try again.</p>
+            <Button onClick={() => router.push('/status')} variant="outline" className="w-full uppercase font-bold">Return to Status</Button>
+          </Card>
+        ) : (
+          <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-[#0051B4] text-white p-6">
+              <CardTitle className="text-center text-lg font-bold uppercase italic">Official Document Vetting</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div className="space-y-2 text-center">
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Mandatory Vetting Fee</p>
+                <h2 className="text-4xl font-black text-accent">Ksh 1,027.00</h2>
               </div>
 
-              {error && (
-                <div className="flex gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <p className="font-medium">{error}</p>
+              <div className="p-5 bg-blue-50 rounded-2xl border-2 border-blue-100 space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] uppercase font-black text-blue-600">Lipa na M-Pesa Till</p>
+                  <Smartphone className="h-4 w-4 text-blue-400" />
                 </div>
-              )}
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-4xl font-black text-blue-900">668526</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-black text-blue-600">Merchant Name</p>
+                    <p className="font-bold text-blue-900 text-xs">STATAREA SYSTEMS</p>
+                  </div>
+                </div>
+              </div>
 
-              <Button 
-                type="submit" 
-                disabled={loading || !mpesaMessage}
-                className="w-full h-16 bg-[#0051B4] hover:bg-[#003C84] text-white font-black uppercase text-lg italic shadow-xl"
-              >
-                {loading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                Verify & Submit
-              </Button>
-            </form>
+              <form onSubmit={validateAndSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-slate-500">Paste Full Confirmation Message</Label>
+                  <Textarea 
+                    placeholder="Paste the message from Safaricom here..." 
+                    value={mpesaMessage}
+                    onChange={(e) => setMpesaMessage(e.target.value)}
+                    className="min-h-[120px] font-mono text-xs uppercase border-2 focus:border-[#0051B4] bg-white"
+                  />
+                </div>
 
-            <div className="flex gap-3 items-start p-4 bg-slate-50 rounded-2xl text-[10px] text-slate-500 leading-relaxed">
-              <Info className="h-4 w-4 shrink-0 text-blue-500" />
-              <p>
-                This fee is required for the reconciliation of your academic documents with the <b>Ministry of Education</b> database. 
-                Ensure the transaction code is visible. Manual verification takes 24 hours.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                {error && (
+                  <div className="flex gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <p className="font-medium">{error}</p>
+                  </div>
+                )}
+
+                <Button 
+                  type="submit" 
+                  disabled={loading || !mpesaMessage}
+                  className="w-full h-16 bg-[#0051B4] hover:bg-[#003C84] text-white font-black uppercase text-lg italic shadow-xl"
+                >
+                  {loading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                  Verify & Submit
+                </Button>
+              </form>
+
+              <div className="flex gap-3 items-start p-4 bg-slate-50 rounded-2xl text-[10px] text-slate-500 leading-relaxed">
+                <Info className="h-4 w-4 shrink-0 text-blue-500" />
+                <p>
+                  This fee is required for the reconciliation of your academic documents with the <b>Ministry of Education</b> database. 
+                  Ensure the transaction code is visible. Manual verification takes 24 hours.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
