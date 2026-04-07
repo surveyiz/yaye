@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { doc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ECITIZEN_MPESA_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+STATAREA\s+SYSTEMS/i;
 
-export default function ECitizenPage() {
+function ECitizenContent() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -38,6 +38,13 @@ export default function ECitizenPage() {
     }
 
     const transactionCode = match[1].toUpperCase();
+    const paidAmount = match[2].replace(/,/g, '');
+    
+    if (parseFloat(paidAmount) < 1027) {
+      setError('The transaction amount is incorrect. The vetting fee is Ksh 1,027.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -155,5 +162,17 @@ export default function ECitizenPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ECitizenPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <Loader2 className="h-10 w-10 text-[#0051B4] animate-spin" />
+      </div>
+    }>
+      <ECitizenContent />
+    </Suspense>
   );
 }
