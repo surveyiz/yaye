@@ -5,13 +5,13 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn, LogOut, UserCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
+  const [isRegistering, setIsRegistering] = React.useState(false);
 
   // Check if the current user is an admin
   const adminDocRef = useMemoFirebase(() => {
@@ -42,15 +43,24 @@ export default function AdminDashboard() {
 
   const { data: applications, isLoading: isAppsLoading } = useCollection(appsQuery);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) return;
     setIsLoggingIn(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Login Successful", description: "Welcome back, Admin." });
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        toast({ title: "Account Created", description: "Admin account created successfully. Now request access below." });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({ title: "Login Successful", description: "Welcome back, Admin." });
+      }
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Login Failed", description: err.message });
+      toast({ 
+        variant: "destructive", 
+        title: isRegistering ? "Registration Failed" : "Login Failed", 
+        description: err.message || "Please check your credentials or register if you don't have an account." 
+      });
     } finally {
       setIsLoggingIn(false);
     }
@@ -118,12 +128,12 @@ export default function AdminDashboard() {
             <Lock className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-accent uppercase italic">Access Restricted</h2>
-            <p className="text-muted-foreground text-sm">Please sign in with administrative credentials to access the Recruitment Command Center.</p>
+            <h2 className="text-2xl font-black text-accent uppercase italic">Admin Access</h2>
+            <p className="text-muted-foreground text-sm">Please sign in or register with administrative credentials to access the Recruitment Command Center.</p>
           </div>
 
           {!user ? (
-            <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <form onSubmit={handleAuth} className="space-y-4 text-left">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input 
@@ -151,14 +161,23 @@ export default function AdminDashboard() {
                 className="w-full bg-accent hover:bg-accent/90 h-12 font-bold uppercase italic shadow-lg"
                 disabled={isLoggingIn}
               >
-                {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : <LogIn className="mr-2 h-5 w-5" />}
-                Sign In
+                {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : (isRegistering ? <UserPlus className="mr-2 h-5 w-5" /> : <LogIn className="mr-2 h-5 w-5" />)}
+                {isRegistering ? "Create Admin Account" : "Sign In"}
               </Button>
+              <div className="text-center pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsRegistering(!isRegistering)}
+                  className="text-[10px] font-bold uppercase text-primary hover:underline"
+                >
+                  {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Register as Admin"}
+                </button>
+              </div>
             </form>
           ) : (
             <div className="space-y-4">
-               <div className="bg-muted p-4 rounded-xl text-xs font-bold text-accent uppercase italic">
-                Signed in as {user.email}
+               <div className="bg-muted p-4 rounded-xl text-xs font-bold text-accent uppercase italic flex items-center justify-center gap-2">
+                <UserCircle className="h-4 w-4" /> Signed in as {user.email}
                </div>
                <Button 
                 onClick={handleBootstrapAdmin} 
@@ -167,7 +186,7 @@ export default function AdminDashboard() {
                 className="w-full h-12 font-bold uppercase italic border-primary text-primary hover:bg-primary/10"
               >
                 {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
-                Request Admin Access
+                Grant Admin Permissions
               </Button>
               <Button variant="ghost" onClick={handleSignOut} className="w-full text-[10px] uppercase font-bold text-muted-foreground">
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -223,57 +242,65 @@ export default function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white">
-                {filteredApps?.map((app) => (
-                  <TableRow key={app.id} className="border-b last:border-none">
-                    <TableCell className="text-[10px] font-medium text-muted-foreground">
-                      {new Date(app.submissionDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="font-black text-accent uppercase italic text-xs">
-                      {app.jobPostingId}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`uppercase text-[9px] px-3 py-1 font-bold ${
-                        app.status === 'docs_approved' ? 'bg-green-600' : 
-                        app.status === 'ecitizen_paid' ? 'bg-blue-600' : 'bg-muted text-accent'
-                      }`}>
-                        {app.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded text-primary">{app.mpesaCode950}</code>
-                    </TableCell>
-                    <TableCell>
-                      {app.mpesaCode1027 ? (
-                        <code className="text-[10px] font-bold bg-blue-50 px-2 py-1 rounded text-blue-700">{app.mpesaCode1027}</code>
-                      ) : (
-                        <span className="text-muted-foreground italic text-[10px]">Not Paid</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {app.status === 'payment_pending' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleUpdateStatus(app, 'payment_approved')} 
-                          className="bg-green-600 hover:bg-green-700 h-8 font-bold text-[10px] uppercase"
-                        >
-                          Approve 950
-                        </Button>
-                      )}
-                      {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleUpdateStatus(app, 'docs_approved')} 
-                          className="bg-primary hover:bg-primary/90 h-8 font-bold text-[10px] uppercase italic"
-                        >
-                          Final Approval
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="h-8">
-                        <FileText className="h-4 w-4" />
-                      </Button>
+                {filteredApps?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
+                      No applications found.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredApps?.map((app) => (
+                    <TableRow key={app.id} className="border-b last:border-none">
+                      <TableCell className="text-[10px] font-medium text-muted-foreground">
+                        {new Date(app.submissionDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="font-black text-accent uppercase italic text-xs">
+                        {app.jobPostingId}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`uppercase text-[9px] px-3 py-1 font-bold ${
+                          app.status === 'docs_approved' ? 'bg-green-600' : 
+                          app.status === 'ecitizen_paid' ? 'bg-blue-600' : 'bg-muted text-accent'
+                        }`}>
+                          {app.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded text-primary">{app.mpesaCode950}</code>
+                      </TableCell>
+                      <TableCell>
+                        {app.mpesaCode1027 ? (
+                          <code className="text-[10px] font-bold bg-blue-50 px-2 py-1 rounded text-blue-700">{app.mpesaCode1027}</code>
+                        ) : (
+                          <span className="text-muted-foreground italic text-[10px]">Not Paid</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        {app.status === 'payment_pending' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleUpdateStatus(app, 'payment_approved')} 
+                            className="bg-green-600 hover:bg-green-700 h-8 font-bold text-[10px] uppercase"
+                          >
+                            Approve 950
+                          </Button>
+                        )}
+                        {(app.status === 'ecitizen_paid' || app.status === 'docs_uploaded') && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleUpdateStatus(app, 'docs_approved')} 
+                            className="bg-primary hover:bg-primary/90 h-8 font-bold text-[10px] uppercase italic"
+                          >
+                            Final Approval
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="h-8">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </Card>
