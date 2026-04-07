@@ -4,20 +4,25 @@
 import React from 'react';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, Search, FileText, Loader2, DollarSign, ShieldCheck, UserPlus, Lock, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
-  const { firestore, user, isUserLoading } = useFirebase();
+  const { auth, firestore, user, isUserLoading } = useFirebase();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isBootstrapping, setIsBootstrapping] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
 
   // Check if the current user is an admin
   const adminDocRef = useMemoFirebase(() => {
@@ -34,6 +39,20 @@ export default function AdminDashboard() {
   }, [firestore, adminData]);
 
   const { data: applications, isLoading: isAppsLoading } = useCollection(appsQuery);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+    setIsLoggingIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Login Successful", description: "Welcome back, Admin." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Login Failed", description: err.message });
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   const handleUpdateStatus = (app: any, newStatus: string) => {
     if (!firestore || !app?.id || !app?.applicantId) {
@@ -92,16 +111,56 @@ export default function AdminDashboard() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-accent uppercase italic">Access Restricted</h2>
-            <p className="text-muted-foreground text-sm">You do not have administrative privileges to view this command center.</p>
+            <p className="text-muted-foreground text-sm">Please sign in with administrative credentials to access the Recruitment Command Center.</p>
           </div>
-          <Button 
-            onClick={handleBootstrapAdmin} 
-            disabled={isBootstrapping}
-            className="w-full bg-primary hover:bg-primary/90 h-14 font-bold uppercase italic"
-          >
-            {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
-            Request Admin Access
-          </Button>
+
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="admin@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-accent hover:bg-accent/90 h-12 font-bold uppercase italic"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? <Loader2 className="animate-spin mr-2" /> : <LogIn className="mr-2 h-5 w-5" />}
+              Sign In
+            </Button>
+          </form>
+
+          {user && !adminData && (
+            <div className="pt-4 border-t">
+              <p className="text-xs text-muted-foreground mb-4 italic">Signed in as {user.email}. Not an admin yet?</p>
+              <Button 
+                onClick={handleBootstrapAdmin} 
+                disabled={isBootstrapping}
+                variant="outline"
+                className="w-full h-12 font-bold uppercase italic border-primary text-primary hover:bg-primary/10"
+              >
+                {isBootstrapping ? <Loader2 className="animate-spin mr-2" /> : <UserPlus className="mr-2 h-5 w-5" />}
+                Request Admin Access
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     );
