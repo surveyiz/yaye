@@ -258,12 +258,6 @@ export default function AdminDashboard() {
                 ))}
               </TableBody>
             </Table>
-            {filteredApps?.length === 0 && (
-              <div className="p-12 text-center space-y-2">
-                <Search className="h-10 w-10 text-muted-foreground mx-auto opacity-20" />
-                <p className="text-muted-foreground font-medium uppercase text-xs">No matching applications found.</p>
-              </div>
-            )}
           </Card>
         )}
       </div>

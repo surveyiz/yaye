@@ -64,7 +64,7 @@ export function ApplicationForm() {
         ward: profileData.ward || '',
         education: profileData.highestEducationQualification || prev.education,
       }));
-      // If profile exists, skip the personal details step
+      // If profile exists, we can skip the personal details step if they are returning
       if (step === 0) setStep(1);
     }
   }, [profileData]);
@@ -138,7 +138,7 @@ export function ApplicationForm() {
       const userAppRef = doc(firestore, 'users', applicantId, 'applications', applicationId);
       const globalAppRef = doc(firestore, 'global_applications', applicationId);
 
-      // Always update profile with latest info
+      // Save/Update profile details
       await setDoc(profileRef, {
         id: applicantId,
         fullName: formData.name,
@@ -151,6 +151,7 @@ export function ApplicationForm() {
         registrationDate: profileData?.registrationDate || new Date().toISOString()
       }, { merge: true });
 
+      // Save specific application
       await setDoc(userAppRef, appData);
       await setDoc(globalAppRef, appData);
 
@@ -194,7 +195,7 @@ export function ApplicationForm() {
         <Alert className="bg-green-50 border-green-200">
           <UserCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 text-xs font-medium">
-            Welcome back, <strong>{profileData.fullName}</strong>. Your profile details have been pre-filled.
+            Welcome back, <strong>{profileData.fullName}</strong>. Your profile details have been pre-filled. You only need to pay the verification fee for this new application.
           </AlertDescription>
         </Alert>
       )}
@@ -286,7 +287,7 @@ export function ApplicationForm() {
             {step > 0 && (
               <Button 
                 variant="ghost" 
-                onClick={() => setStep(prev => (prev === 1 && profileData ? 0 : prev - 1))}
+                onClick={() => setStep(prev => prev - 1)}
               >
                 Back
               </Button>
@@ -304,14 +305,6 @@ export function ApplicationForm() {
           </div>
         </CardContent>
       </Card>
-      
-      <div className="flex gap-3 items-start p-4 bg-white/50 rounded-2xl text-[10px] text-slate-500 border border-slate-200">
-        <Info className="h-4 w-4 shrink-0 text-blue-500" />
-        <p>
-          Need assistance? Our help desk is available 24/7 at +254 783 334 670. 
-          Your data is processed securely under the Data Protection Act of Kenya and International Labour Laws.
-        </p>
-      </div>
     </div>
   );
 }
