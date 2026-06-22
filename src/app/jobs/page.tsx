@@ -32,6 +32,15 @@ const jobs = [
   'Truck Drivers', 'Warehouse Workers', 'Web Designers/Software Developers', 'Welder', 'Yard Workers/Gardeners'
 ];
 
+export function getSalaryForJob(job: string): string {
+  const highTier = ['Doctor', 'Architect', 'Scientist', 'Manager', 'Analyst', 'Engineer', 'Developer', 'Nurse', 'Advisor'];
+  const midTier = ['Accountant', 'Electrician', 'Technician', 'Specialist', 'Coordinator', 'Secretary', 'Plumber', 'Welder', 'Teacher', 'Banker', 'Logistics'];
+  
+  if (highTier.some(keyword => job.includes(keyword))) return "$95,000 - $165,000 CAD";
+  if (midTier.some(keyword => job.includes(keyword))) return "$65,000 - $92,000 CAD";
+  return "$48,500 - $62,000 CAD";
+}
+
 export default function JobsPage() {
   const { user, firestore, isUserLoading } = useFirebase();
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -98,6 +107,7 @@ export default function JobsPage() {
             const isCompleted = jobApp?.status === 'docs_approved';
             const isCurrentActive = jobApp && !isCompleted;
             const isDisabled = !!activeApp && !isCurrentActive;
+            const salaryRange = getSalaryForJob(job);
 
             return (
               <Card key={job} className={`group hover:shadow-2xl transition-all border-none shadow-md overflow-hidden rounded-3xl bg-white ${isCurrentActive ? 'ring-2 ring-primary' : ''}`}>
@@ -119,7 +129,7 @@ export default function JobsPage() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Annual Salary: From $69,500 CAD</span>
+                    <span>Annual Salary: {salaryRange}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
                     Fully sponsored pathway including airfare, visa, and accommodation for successful Kenyan applicants.

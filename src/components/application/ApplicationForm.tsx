@@ -15,6 +15,7 @@ import { doc, setDoc, collection, query, where, getDocs, orderBy } from 'firebas
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { getSalaryForJob } from '@/app/jobs/page';
 
 const STEPS = ['Personal', 'Quals', 'Payment', 'Review'];
 const MPESA_MESSAGE_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+RECRUITMENT\s+SERVICES/i;
@@ -142,6 +143,7 @@ export function ApplicationForm() {
 
       const transactionCode = match[1].toUpperCase();
       const applicationId = crypto.randomUUID();
+      const calculatedSalary = getSalaryForJob(formData.jobRole);
 
       const appData = {
         id: applicationId,
@@ -149,7 +151,8 @@ export function ApplicationForm() {
         jobPostingId: formData.jobRole,
         submissionDate: new Date().toISOString(),
         status: 'payment_pending',
-        mpesaCode950: transactionCode
+        mpesaCode950: transactionCode,
+        offeredSalary: calculatedSalary
       };
 
       const userAppRef = doc(firestore, 'users', user.uid, 'applications', applicationId);
@@ -304,6 +307,7 @@ export function ApplicationForm() {
                 <div className="grid grid-cols-1 gap-4 text-xs bg-muted/30 p-4 rounded-xl border">
                   <div><p className="text-[9px] uppercase font-black text-slate-500">Name</p><p className="font-bold uppercase">{formData.name}</p></div>
                   <div><p className="text-[9px] uppercase font-black text-slate-500">Target Role</p><p className="font-bold text-primary uppercase italic">{formData.jobRole}</p></div>
+                  <div><p className="text-[9px] uppercase font-black text-slate-500">Estimated Salary</p><p className="font-bold text-accent">{getSalaryForJob(formData.jobRole)}</p></div>
                   <div><p className="text-[9px] uppercase font-black text-slate-500">Transaction Code</p><p className="font-bold">{formData.mpesaMessage.match(MPESA_MESSAGE_REGEX)?.[1] || 'N/A'}</p></div>
                 </div>
                 <Alert className="bg-primary/5 border-primary/20">

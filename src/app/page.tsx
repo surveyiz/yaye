@@ -161,7 +161,7 @@ export default function Home() {
                 Work in Canada <br/> <span className="text-primary italic">Fully Sponsored</span>
               </h1>
               <p className="text-xl text-blue-100 max-w-xl">
-                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers.
+                The Canadian Labour market is facing severe shortages. Over 196,000 openings for skilled and unskilled workers with competitive salaries.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/jobs" className="w-full sm:w-auto">
@@ -232,7 +232,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Briefcase, title: "High Earnings", desc: "Start from $69,500 CAD (Ksh 5.3M+) annually." },
+              { icon: Briefcase, title: "High Earnings", desc: "Enjoy competitive annual salaries with performance bonuses." },
               { icon: Plane, title: "Fully Sponsored", desc: "Free Air Ticket, Visa, and Accommodation." },
               { icon: GraduationCap, title: "Family Migration", desc: "Move with spouse and children under 22." },
               { icon: CheckCircle2, title: "Scholarships", desc: "Fully funded further education for you." }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -94,7 +95,7 @@ export default function SuccessDocumentPage() {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Base Annual Salary</p>
-                    <p className="text-xl font-bold text-accent">$69,500 CAD <span className="text-xs font-normal text-muted-foreground italic">(Guaranteed)</span></p>
+                    <p className="text-xl font-bold text-accent">{app.offeredSalary || '$69,500 CAD'} <span className="text-xs font-normal text-muted-foreground italic">(Guaranteed)</span></p>
                   </div>
                 </div>
                 <div className="space-y-6">
