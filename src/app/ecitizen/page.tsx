@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Smartphone, Shield, Info, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const ECITIZEN_MPESA_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+STATAREA\s+SYSTEMS/i;
+const ECITIZEN_MPESA_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+DELTA\s+MAPLE\s+VENTURES/i;
 
 function ECitizenContent() {
   const { firestore, user } = useFirebase();
@@ -28,7 +28,6 @@ function ECitizenContent() {
 
   const validateAndSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Defensive check for appId and other dependencies
     if (!firestore || !user || !appId || appId === 'null' || appId === 'undefined') {
       setError('Missing or invalid application reference. Please return to the status page.');
       return;
@@ -37,7 +36,7 @@ function ECitizenContent() {
 
     const match = mpesaMessage.match(ECITIZEN_MPESA_REGEX);
     if (!match) {
-      setError('Invalid format. Please paste the COMPLETE Safaricom confirmation message showing payment to STATAREA SYSTEMS.');
+      setError('Invalid format. Please paste the COMPLETE Safaricom confirmation message showing payment to DELTA MAPLE VENTURES.');
       return;
     }
 
@@ -71,7 +70,6 @@ function ECitizenContent() {
         ecitizenPaymentDate: new Date().toISOString()
       };
 
-      // Ensure IDs are valid before constructing references
       const userRef = doc(firestore, 'users', user.uid, 'applications', appId);
       const globalRef = doc(firestore, 'global_applications', appId);
 
@@ -127,11 +125,11 @@ function ECitizenContent() {
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-4xl font-black text-blue-900">668526</p>
+                    <p className="text-4xl font-black text-blue-900">3531635</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] uppercase font-black text-blue-600">Merchant Name</p>
-                    <p className="font-bold text-blue-900 text-xs">STATAREA SYSTEMS</p>
+                    <p className="font-bold text-blue-900 text-xs">DELTA MAPLE VENTURES</p>
                   </div>
                 </div>
               </div>

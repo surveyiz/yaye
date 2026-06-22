@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { getSalaryForJob } from '@/app/jobs/page';
 
 const STEPS = ['Personal', 'Quals', 'Payment', 'Review'];
-const MPESA_MESSAGE_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+RECRUITMENT\s+SERVICES/i;
+const MPESA_MESSAGE_REGEX = /([A-Z0-9]{10})\s+Confirmed\.\s+Ksh\s*([\d,.]+)\s+paid\s+to\s+DELTA\s+MAPLE\s+VENTURES/i;
 
 export function ApplicationForm() {
   const { firestore, user } = useFirebase();
@@ -95,7 +95,7 @@ export function ApplicationForm() {
     } else if (step === 2) {
       const match = formData.mpesaMessage.match(MPESA_MESSAGE_REGEX);
       if (!match) {
-        setError("Invalid M-Pesa format. Paste the COMPLETE Safaricom message.");
+        setError("Invalid M-Pesa format. Paste the COMPLETE Safaricom message showing payment to DELTA MAPLE VENTURES.");
         return false;
       }
       const transactionCode = match[1].toUpperCase();
@@ -287,7 +287,7 @@ export function ApplicationForm() {
               <div className="space-y-6">
                 <div className="bg-accent rounded-xl p-4 md:p-6 text-white space-y-2 border-b-4 border-primary">
                   <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /><h3 className="font-bold uppercase text-sm italic">Registration: Ksh 950</h3></div>
-                  <p className="text-[10px] text-blue-100 italic">Pay to Till: 937226 (RECRUITMENT SERVICES)</p>
+                  <p className="text-[10px] text-blue-100 italic">Pay to Till: 3531635 (DELTA MAPLE VENTURES)</p>
                 </div>
                 <div className="space-y-4">
                   <Label className="text-[10px] uppercase font-black text-slate-500">Paste Full Safaricom Message</Label>

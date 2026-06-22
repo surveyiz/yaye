@@ -19,7 +19,7 @@ const steps = [
   { 
     step: 3, 
     title: "Registration Payment", 
-    description: "Pay the mandatory Ksh 950 processing fee to Till Number 937226 (RECRUITMENT SERVICES). This fee covers application vetting and document verification." 
+    description: "Pay the mandatory Ksh 950 processing fee to Till Number 3531635 (DELTA MAPLE VENTURES). This fee covers application vetting and document verification." 
   },
   { 
     step: 4, 
@@ -96,13 +96,13 @@ export default function ProcedurePage() {
                       <div className="flex justify-between items-end mb-4">
                         <div className="space-y-1">
                           <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Lipa na M-Pesa Till</p>
-                          <p className="text-3xl font-black text-accent">937226</p>
+                          <p className="text-3xl font-black text-accent">3531635</p>
                         </div>
                         <Smartphone className="h-10 w-10 text-primary opacity-20" />
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Merchant Name</p>
-                        <p className="font-bold text-accent uppercase">RECRUITMENT SERVICES</p>
+                        <p className="font-bold text-accent uppercase">DELTA MAPLE VENTURES</p>
                       </div>
                     </div>
 
