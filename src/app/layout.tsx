@@ -6,8 +6,8 @@ import { FirebaseClientProvider } from '@/firebase';
 import { WebviewNavigationTrigger } from '@/components/layout/WebviewNavigationTrigger';
 
 export const metadata: Metadata = {
-  title: 'Canada Pathway Jobs | Official Recruitment 2025',
-  description: 'Apply for massive job recruitment in Canada for Kenyan citizens. Sponsored pathways for construction, hospitality, retail and more.',
+  title: 'Canada Pathway Jobs | Official Recruitment 2026',
+  description: 'Apply for massive job recruitment in Canada for Kenyan citizens. Sponsored pathways for construction, hospitality, retail and more. Deadline 2026.',
 };
 
 export default function RootLayout({

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -69,7 +68,7 @@ export default function JobsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div className="space-y-2">
             <h1 className="font-headline text-3xl md:text-4xl font-bold text-accent uppercase italic">Global Vacancies</h1>
-            <p className="text-muted-foreground font-medium">Explore over 80+ job categories currently recruiting Kenyans for the 2025 intake.</p>
+            <p className="text-muted-foreground font-medium">Explore over 80+ job categories currently recruiting Kenyans for the 2026 intake.</p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -132,7 +131,7 @@ export default function JobsPage() {
                     <span>Annual Salary: {salaryRange}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
-                    Fully sponsored pathway including airfare, visa, and accommodation for successful Kenyan applicants.
+                    Fully sponsored pathway including airfare, visa, and accommodation for successful Kenyan applicants for the 2026 intake.
                   </p>
                 </CardContent>
                 <CardFooter className="pt-2">

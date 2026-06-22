@@ -1,4 +1,3 @@
-
 import { Mail, Phone, MapPin, Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -47,7 +46,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-blue-200 uppercase tracking-widest font-bold">
-          <p>© 2025 Jobs In Canada Pathway. Official Recruitment Portal.</p>
+          <p>© 2026 Jobs In Canada Pathway. Official Recruitment Portal.</p>
           <div className="flex space-x-4">
             <Link href="/privacy" className="hover:underline">Privacy</Link>
             <Link href="/terms" className="hover:underline">Terms</Link>

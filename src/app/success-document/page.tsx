@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -66,7 +65,7 @@ export default function SuccessDocumentPage() {
                 <Globe className="h-20 w-20 text-primary" />
                 <div className="flex flex-col">
                   <span className="font-headline text-4xl font-black tracking-tighter leading-none text-accent">CANADA PATHWAY</span>
-                  <span className="text-[11px] tracking-[0.5em] font-bold text-primary uppercase mt-1">Official Recruitment 2025</span>
+                  <span className="text-[11px] tracking-[0.5em] font-bold text-primary uppercase mt-1">Official Recruitment 2026</span>
                 </div>
               </div>
               <div className="text-right flex flex-col items-end">
@@ -82,7 +81,7 @@ export default function SuccessDocumentPage() {
               <div className="text-center space-y-4">
                 <h1 className="text-3xl md:text-5xl font-black text-accent uppercase italic underline decoration-primary decoration-4 underline-offset-8">Certificate of Selection</h1>
                 <p className="text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
-                  This serves as official confirmation that the applicant identified below has successfully passed the statutory background checks, academic vetting, and financial clearances required for the 2025 Canadian Global Recruitment Intake.
+                  This serves as official confirmation that the applicant identified below has successfully passed the statutory background checks, academic vetting, and financial clearances required for the 2026 Canadian Global Recruitment Intake.
                 </p>
               </div>
 
@@ -108,7 +107,7 @@ export default function SuccessDocumentPage() {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Intake Cycle</p>
-                    <p className="text-xl font-bold text-accent italic">July 2025 Enrollment</p>
+                    <p className="text-xl font-bold text-accent italic">July 2026 Enrollment</p>
                   </div>
                 </div>
               </div>
@@ -166,7 +165,7 @@ export default function SuccessDocumentPage() {
                   <CheckCircle2 className="h-20 w-20 text-green-600" />
                   <div className="text-right">
                     <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.3em] mb-1">Authenticated</p>
-                    <p className="text-[9px] font-bold text-accent italic">NEA/CPJ/2025/VERIFIED</p>
+                    <p className="text-[9px] font-bold text-accent italic">NEA/CPJ/2026/VERIFIED</p>
                   </div>
                 </div>
               </div>

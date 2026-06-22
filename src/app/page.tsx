@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -128,7 +127,7 @@ export default function Home() {
                   <CardTitle className="text-sm font-bold uppercase italic">Selection Notice</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-blue-100">Your application is protected by NEA global recruitment standards.</p>
+                  <p className="text-xs text-blue-100">Your application is protected by NEA global recruitment standards for 2026.</p>
                 </CardContent>
               </Card>
             </div>
@@ -155,7 +154,7 @@ export default function Home() {
               </div>
               <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium backdrop-blur-sm">
                 <span className="mr-2">📢</span>
-                2025 Kenyan Intake is Live
+                2026 Kenyan Intake is Live
               </div>
               <h1 className="font-headline text-4xl md:text-6xl font-bold leading-tight uppercase">
                 Work in Canada <br/> <span className="text-primary italic">Fully Sponsored</span>
