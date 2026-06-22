@@ -5,7 +5,7 @@ import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Globe, ShieldCheck, Award, FileText, CheckCircle2, Printer, Receipt, Landmark } from 'lucide-react';
+import { Globe, ShieldCheck, Award, FileText, CheckCircle2, Printer, Receipt, Landmark, Calendar } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 export default function SuccessDocumentPage() {
@@ -106,8 +106,11 @@ export default function SuccessDocumentPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Intake Cycle</p>
-                    <p className="text-xl font-bold text-accent italic">July 2026 Enrollment</p>
+                    <p className="text-[10px] uppercase font-black text-slate-400 mb-1 tracking-widest">Selection Issuance</p>
+                    <div className="flex items-center gap-2 font-bold text-accent italic">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      30th June 2026
+                    </div>
                   </div>
                 </div>
               </div>
@@ -143,8 +146,8 @@ export default function SuccessDocumentPage() {
                   Executive Directives
                 </h3>
                 <ol className="text-[11px] text-slate-700 space-y-3 list-decimal list-inside leading-relaxed font-medium">
+                  <li>Official Phone Call Interview and digital Job Offer Letter will be issued on <strong>30th June 2026</strong>.</li>
                   <li>This certificate grants the bearer priority status for Visa processing and Air-Ticket allocation.</li>
-                  <li>Official Contract & Offer Letter will be dispatched to your registered address within 14 working days.</li>
                   <li>Applicants are required to maintain an active passport; sponsorship covers all travel logistics.</li>
                   <li>The validity of this document is subject to the authenticity of provided academic records.</li>
                 </ol>

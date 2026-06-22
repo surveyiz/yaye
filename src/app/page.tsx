@@ -257,7 +257,7 @@ export default function Home() {
             <div className="relative z-10 space-y-6">
               <h2 className="font-headline text-3xl md:text-4xl font-bold uppercase">Ready to fly?</h2>
               <p className="text-xl text-blue-100">
-                Deadline: 7th April 2026. Interviews are ongoing.
+                Deadline: 29th June 2026 at 23:59. <br/>Interviews & Offer Letters: 30th June 2026.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link href="/jobs">

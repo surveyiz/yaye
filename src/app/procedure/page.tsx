@@ -1,7 +1,6 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Plane, FileText, Phone, Award, ShieldCheck, Smartphone, Info } from 'lucide-react';
+import { CheckCircle2, Plane, FileText, Phone, Award, ShieldCheck, Smartphone, Info, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -34,12 +33,12 @@ const steps = [
   { 
     step: 6, 
     title: "Official Interview", 
-    description: "Attend a virtual or physical interview with the Canadian employer representatives." 
+    description: "Attend a virtual or physical interview with the Canadian employer representatives. These are scheduled for 30th June 2026." 
   },
   { 
     step: 7, 
     title: "Contract Issuance", 
-    description: "Successful candidates receive a signed Job Offer Letter detailing the $69,500 CAD minimum annual salary." 
+    description: "Successful candidates receive a signed Job Offer Letter detailing their specific salary. Letters issued on 30th June 2026." 
   },
   { 
     step: 8, 
@@ -62,7 +61,7 @@ export default function ProcedurePage() {
             <Badge className="bg-primary hover:bg-primary text-white px-4 py-1">Official Procedure</Badge>
             <h1 className="font-headline text-3xl md:text-5xl font-bold text-accent uppercase">How to Join the Canada Pathway</h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Follow these steps carefully to ensure your application is processed successfully for the 2025 recruitment intake.
+              Follow these steps carefully to ensure your application is processed successfully for the 2026 recruitment intake.
             </p>
           </div>
 
@@ -87,33 +86,25 @@ export default function ProcedurePage() {
               <Card className="bg-white border-t-4 border-primary shadow-lg sticky top-8">
                 <CardContent className="p-8 space-y-6">
                   <div className="flex items-center gap-3 text-primary font-bold">
-                    <ShieldCheck className="h-6 w-6" />
-                    <h3 className="font-headline text-xl">Payment Details</h3>
+                    <Calendar className="h-6 w-6" />
+                    <h3 className="font-headline text-xl">Key Deadlines</h3>
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-accent/20">
-                      <div className="flex justify-between items-end mb-4">
-                        <div className="space-y-1">
-                          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Lipa na M-Pesa Till</p>
-                          <p className="text-3xl font-black text-accent">3531635</p>
-                        </div>
-                        <Smartphone className="h-10 w-10 text-primary opacity-20" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Merchant Name</p>
-                        <p className="font-bold text-accent uppercase">DELTA MAPLE VENTURES</p>
-                      </div>
+                    <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Final Application Deadline</p>
+                      <p className="text-xl font-black text-primary uppercase italic">29th June 2026</p>
+                      <p className="text-[10px] font-bold text-accent">Time: 23:59 (Midnight)</p>
                     </div>
 
-                    <div className="flex justify-between text-sm border-b pb-2">
-                      <span className="text-muted-foreground">Registration Fee:</span>
-                      <span className="font-bold text-accent">Ksh 950</span>
+                    <div className="p-4 bg-accent/5 rounded-xl border border-accent/20">
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Interviews & Offer Letters</p>
+                      <p className="text-xl font-black text-accent uppercase italic">30th June 2026</p>
                     </div>
 
                     <div className="flex gap-3 bg-blue-50 p-3 rounded-lg text-xs text-blue-800 leading-tight">
                       <Info className="h-4 w-4 shrink-0" />
-                      <p>Ensure you paste the <strong>FULL</strong> confirmation message. Verification fails if the Safaricom message is altered or incomplete.</p>
+                      <p>Applications submitted after 29th June 2026 at 23:59 will not be considered for the current intake cycle.</p>
                     </div>
                   </div>
 
